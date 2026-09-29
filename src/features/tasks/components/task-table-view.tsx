@@ -196,7 +196,7 @@ export function TaskTableView({
               {/* Task Title & Description */}
               <th
                 onClick={() => handleSort("title")}
-                className="py-3 px-4 min-w-[240px] cursor-pointer hover:text-foreground transition-colors"
+                className="py-3 px-4 min-w-[200px] max-w-sm md:max-w-md cursor-pointer hover:text-foreground transition-colors"
               >
                 <div className="flex items-center">
                   <span>{en.tasks.tableHeaders.task}</span>
@@ -258,33 +258,30 @@ export function TaskTableView({
                   className="group hover:bg-muted/30 transition-colors cursor-pointer"
                 >
                   {/* Status Cell */}
-                  <td
-                    className="py-3 px-4"
-                    onClick={(e) => e.stopPropagation()}
-                  >
+                  <td className="py-3 px-4">
                     <TaskStatusBadge
                       status={task.status}
-                      interactive
                       size="sm"
-                      onStatusChange={(newStatus) =>
-                        onStatusChange(task.id, newStatus)
-                      }
                     />
                   </td>
 
                   {/* Task Title & Desc Cell */}
-                  <td className="py-3 px-4">
-                    <div className="flex flex-col gap-0.5">
+                  <td className="py-3 px-4 max-w-sm md:max-w-md">
+                    <div className="flex flex-col gap-0.5 min-w-0">
                       <span
                         className={cn(
-                          "font-semibold text-foreground text-xs line-clamp-1 group-hover:text-primary transition-colors",
+                          "font-semibold text-foreground text-xs line-clamp-1 truncate break-all block group-hover:text-primary transition-colors",
                           task.status === "DONE" && "line-through text-muted-foreground"
                         )}
+                        title={task.title}
                       >
                         {task.title}
                       </span>
                       {task.description && (
-                        <span className="text-[11px] text-muted-foreground line-clamp-1">
+                        <span
+                          className="text-[11px] text-muted-foreground line-clamp-1 truncate break-all block"
+                          title={task.description}
+                        >
                           {task.description}
                         </span>
                       )}
@@ -292,17 +289,10 @@ export function TaskTableView({
                   </td>
 
                   {/* Priority Cell */}
-                  <td
-                    className="py-3 px-4"
-                    onClick={(e) => e.stopPropagation()}
-                  >
+                  <td className="py-3 px-4">
                     <TaskPriorityBadge
                       priority={task.priority}
-                      interactive
                       size="sm"
-                      onPriorityChange={(newPriority) =>
-                        onPriorityChange(task.id, newPriority)
-                      }
                     />
                   </td>
 

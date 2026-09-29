@@ -194,7 +194,7 @@ export default function ProjectHomePage({ params }: ProjectPageProps) {
   );
 
   return (
-    <div className="flex flex-col gap-5 max-w-7xl mx-auto py-2 px-1 sm:px-2">
+    <div className="flex flex-col gap-5 w-full max-w-[1600px] mx-auto py-1 px-1 sm:px-2">
       {/* Project Header Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/60 pb-4">
         <div className="flex items-center gap-3.5">

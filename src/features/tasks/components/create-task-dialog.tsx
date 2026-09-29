@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { format } from "date-fns";
 import { createTaskSchema, type CreateTaskFormValues } from "../schema";
 import { useCreateTask } from "../hooks/use-create-task";
 import { useWorkspaceMembers } from "@/features/workspace/hooks/use-workspace-members";
@@ -227,6 +228,7 @@ export function CreateTaskDialog({
               <Input
                 id="task-due-date"
                 type="date"
+                min={format(new Date(), "yyyy-MM-dd")}
                 className="text-xs h-9 rounded-xl"
                 disabled={createTaskMutation.isPending}
                 {...register("dueDate")}

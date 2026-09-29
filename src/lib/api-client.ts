@@ -10,15 +10,39 @@ export class ApiError extends Error {
   }
 }
 
+const TOKEN_STORAGE_KEY = "devboard_access_token";
+
 let inMemoryAccessToken: string | null = null;
 let isRefreshing = false;
+let refreshPromise: Promise<string | null> | null = null;
 let refreshSubscribers: Array<(token: string) => void> = [];
 let authFailureSubscribers: Array<() => void> = [];
 
-export const getAccessToken = () => inMemoryAccessToken;
+export const getAccessToken = (): string | null => {
+  if (inMemoryAccessToken) return inMemoryAccessToken;
+  if (typeof window !== "undefined") {
+    try {
+      const stored = localStorage.getItem(TOKEN_STORAGE_KEY);
+      if (stored) {
+        inMemoryAccessToken = stored;
+        return stored;
+      }
+    } catch {}
+  }
+  return null;
+};
 
 export const setAccessToken = (token: string | null) => {
   inMemoryAccessToken = token;
+  if (typeof window !== "undefined") {
+    try {
+      if (token) {
+        localStorage.setItem(TOKEN_STORAGE_KEY, token);
+      } else {
+        localStorage.removeItem(TOKEN_STORAGE_KEY);
+      }
+    } catch {}
+  }
 };
 
 export const onAuthFailure = (callback: () => void) => {
@@ -50,6 +74,50 @@ const onTokenRefreshFailed = (error: any) => {
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/, "") ||
   "https://devboard-platform-backend.onrender.com";
+
+export async function refreshAuthToken(): Promise<string | null> {
+  if (refreshPromise) {
+    return refreshPromise;
+  }
+
+  isRefreshing = true;
+  refreshPromise = (async () => {
+    try {
+      const refreshResponse = await fetch(`${API_BASE_URL}/auth/refresh`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+
+      if (!refreshResponse.ok) {
+        throw new Error("Session expired. Please log in again.");
+      }
+
+      const refreshData = await refreshResponse.json();
+      const newAccessToken =
+        refreshData?.data?.accessToken || refreshData?.accessToken;
+
+      if (!newAccessToken) {
+        throw new Error("No access token returned from refresh.");
+      }
+
+      setAccessToken(newAccessToken);
+      isRefreshing = false;
+      onTokenRefreshed(newAccessToken);
+      return newAccessToken;
+    } catch (refreshErr) {
+      isRefreshing = false;
+      onTokenRefreshFailed(refreshErr);
+      throw refreshErr;
+    } finally {
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
+}
 
 interface RequestOptions extends RequestInit {
   skipAuth?: boolean;
@@ -84,8 +152,9 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
     headers["Content-Type"] = "application/json";
   }
 
-  if (!skipAuth && inMemoryAccessToken) {
-    headers["Authorization"] = `Bearer ${inMemoryAccessToken}`;
+  const currentToken = getAccessToken();
+  if (!skipAuth && currentToken) {
+    headers["Authorization"] = `Bearer ${currentToken}`;
   }
 
   const config: RequestInit = {
@@ -112,58 +181,24 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
     !endpoint.includes("/auth/register") &&
     !endpoint.includes("/auth/refresh")
   ) {
-    if (!isRefreshing) {
-      isRefreshing = true;
-
-      try {
-        const refreshResponse = await fetch(`${API_BASE_URL}/auth/refresh`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-        });
-
-        if (!refreshResponse.ok) {
-          throw new Error("Session expired. Please log in again.");
-        }
-
-        const refreshData = await refreshResponse.json();
-        const newAccessToken =
-          refreshData?.data?.accessToken || refreshData?.accessToken;
-
-        if (!newAccessToken) {
-          throw new Error("No access token returned from refresh.");
-        }
-
-        setAccessToken(newAccessToken);
-        isRefreshing = false;
-        onTokenRefreshed(newAccessToken);
-      } catch (refreshErr) {
-        isRefreshing = false;
-        onTokenRefreshFailed(refreshErr);
+    try {
+      const newToken = await refreshAuthToken();
+      if (!newToken) {
         throw new ApiError(401, "Session expired. Please log in again.");
       }
-    }
 
-    return new Promise<T>((resolve, reject) => {
-      subscribeTokenRefresh(async (newToken: string) => {
-        try {
-          const retryHeaders = {
-            ...headers,
-            Authorization: `Bearer ${newToken}`,
-          };
-          const retryRes = await fetch(url, {
-            ...config,
-            headers: retryHeaders,
-          });
-          const data = await parseResponse<T>(retryRes);
-          resolve(data);
-        } catch (err) {
-          reject(err);
-        }
+      const retryHeaders = {
+        ...headers,
+        Authorization: `Bearer ${newToken}`,
+      };
+      const retryRes = await fetch(url, {
+        ...config,
+        headers: retryHeaders,
       });
-    });
+      return parseResponse<T>(retryRes);
+    } catch (err: any) {
+      throw new ApiError(401, err.message || "Session expired. Please log in again.");
+    }
   }
 
   return parseResponse<T>(response);

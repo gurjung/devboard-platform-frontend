@@ -18,22 +18,17 @@ interface DashboardShellProps {
 
 export function DashboardShell({ user, children }: DashboardShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const { data: workspaces } = useWorkspaces();
-
-  const hasWorkspaces = Boolean(workspaces && workspaces.length > 0);
 
   return (
     <div className="flex min-h-screen bg-background">
-      {hasWorkspaces && (
-        <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      )}
+      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="flex flex-1 flex-col min-w-0">
         <Navbar
           user={user}
           onOpenSidebar={() => setSidebarOpen((prev) => !prev)}
-          showSidebarTrigger={hasWorkspaces}
+          showSidebarTrigger={true}
         />
-        <main className="flex-1 p-4 md:p-6">{children}</main>
+        <main className="flex-1 p-3 sm:p-4 md:p-6">{children}</main>
       </div>
     </div>
   );

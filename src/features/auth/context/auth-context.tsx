@@ -7,7 +7,13 @@ import React, {
   useState,
   useCallback,
 } from "react";
-import { apiClient, setAccessToken, onAuthFailure } from "@/lib/api-client";
+import {
+  apiClient,
+  setAccessToken,
+  getAccessToken,
+  refreshAuthToken,
+  onAuthFailure,
+} from "@/lib/api-client";
 import type { User, AuthResponse } from "../types";
 import type { LoginInput, RegisterInput } from "../schema";
 
@@ -29,19 +35,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refresh = useCallback(async () => {
     try {
-      const response = await apiClient.post<any>(
-        "/auth/refresh",
-        {},
-        { skipAuth: true }
-      );
-      const token = response?.data?.accessToken || response?.accessToken;
-      if (token) {
-        setAccessToken(token);
-        let userData = response?.data?.user || response?.user;
-        if (!userData) {
+      const existingToken = getAccessToken();
+      if (existingToken) {
+        try {
           const meRes = await apiClient.get<any>("/auth/me");
-          userData = meRes?.data?.user || meRes?.data || meRes;
+          const userData = meRes?.data?.user || meRes?.data || meRes;
+          if (userData && (userData.id || userData.email)) {
+            setUser(userData);
+            setIsLoading(false);
+            return;
+          }
+        } catch {
+          // Token expired or invalid, fall through to refresh
         }
+      }
+
+      // Try refreshing session
+      const newToken = await refreshAuthToken();
+      if (newToken) {
+        const meRes = await apiClient.get<any>("/auth/me");
+        const userData = meRes?.data?.user || meRes?.data || meRes;
         setUser(userData);
       } else {
         setAccessToken(null);

@@ -22,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { format } from "date-fns";
 import { updateTaskSchema, type UpdateTaskFormValues } from "../schema";
 import { useUpdateTask } from "../hooks/use-update-task";
 import { useDeleteTask } from "../hooks/use-delete-task";
@@ -35,7 +36,6 @@ import {
 import type { Task, TaskStatus, TaskPriority } from "../types";
 import type { WorkspaceRole } from "@/features/workspace/types";
 import { en } from "@/locales/en";
-import { format } from "date-fns";
 
 interface EditTaskDialogProps {
   task: Task | null;
@@ -278,6 +278,7 @@ export function EditTaskDialog({
             <Input
               id="edit-task-due-date"
               type="date"
+              min={format(new Date(), "yyyy-MM-dd")}
               className="text-xs h-9 rounded-xl"
               disabled={!canEdit || updateTaskMutation.isPending}
               {...register("dueDate")}

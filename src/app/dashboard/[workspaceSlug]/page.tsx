@@ -103,7 +103,7 @@ export default function WorkspaceDashboardPage() {
   const projectsList = statsData?.projects || [];
 
   return (
-    <div className="flex flex-col gap-6 sm:gap-8 pb-10 max-w-7xl mx-auto py-1">
+    <div className="flex flex-col gap-6 sm:gap-8 pb-10 w-full max-w-[1600px] mx-auto py-1">
       {/* Workspace Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border/80 pb-5">
         <div className="flex items-center gap-4">
