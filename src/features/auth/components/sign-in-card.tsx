@@ -25,7 +25,6 @@ import {
 import { useLogin } from "@/features/auth/hooks/use-login";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { SocialAuthButtons } from "./social-auth-buttons";
 
 export const SignInCard = () => {
   const loginMutation = useLogin();
@@ -125,12 +124,6 @@ export const SignInCard = () => {
             </Button>
           </FieldGroup>
         </form>
-      </CardContent>
-      <div className="px-7">
-        <Separator />
-      </div>
-      <CardContent className="p-7 flex flex-col gap-y-4">
-        <SocialAuthButtons disabled={loginMutation.isPending} action="login" />
       </CardContent>
       <div className="px-7">
         <Separator />
