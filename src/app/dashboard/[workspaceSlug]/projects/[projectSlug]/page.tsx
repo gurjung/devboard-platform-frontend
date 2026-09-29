@@ -1,27 +1,40 @@
 "use client";
 
-import React, { use } from "react";
+import React, { use, useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Settings,
   FolderKanban,
-  Calendar,
-  CheckCircle2,
-  Clock,
-  ArrowRight,
-  Shield,
-  Layers,
-  Sparkles,
   Loader2,
-  User,
+  ChevronRight,
+  Layers,
 } from "lucide-react";
 import { useWorkspaces } from "@/features/workspace/hooks/use-workspaces";
 import { useProject } from "@/features/projects/hooks/use-project";
+import { useAuth } from "@/features/auth/context/auth-context";
 import { ProjectAvatar } from "@/features/projects/components/project-avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { WorkspaceRole } from "@/features/workspace/types";
+import {
+  type Task,
+  type TaskStatus,
+  type TaskPriority,
+  type TaskFilters,
+  type TaskView,
+  useTasks,
+  useUpdateTask,
+  useDeleteTask,
+  ViewSelector,
+  TaskFilterBar,
+  TaskTableView,
+  TaskKanbanView,
+  TaskCalendarView,
+  CreateTaskDialog,
+  EditTaskDialog,
+} from "@/features/tasks";
+import { en } from "@/locales/en";
 
 interface ProjectPageProps {
   params: Promise<{
@@ -33,7 +46,41 @@ interface ProjectPageProps {
 export default function ProjectHomePage({ params }: ProjectPageProps) {
   const { workspaceSlug, projectSlug } = use(params);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { user } = useAuth();
 
+  // Active View State (synced with ?view= URL query)
+  const initialView = (searchParams.get("view") as TaskView) || "table";
+  const [currentView, setCurrentView] = useState<TaskView>(
+    ["table", "kanban", "calendar"].includes(initialView)
+      ? initialView
+      : "table"
+  );
+
+  useEffect(() => {
+    const v = searchParams.get("view") as TaskView;
+    if (v && ["table", "kanban", "calendar"].includes(v)) {
+      setCurrentView(v);
+    }
+  }, [searchParams]);
+
+  // Filters State
+  const [filters, setFilters] = useState<TaskFilters>({
+    search: "",
+    status: "ALL",
+    priority: "ALL",
+    assigneeId: "ALL",
+    overdue: false,
+  });
+
+  // Dialogs State
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [createDefaultStatus, setCreateDefaultStatus] = useState<TaskStatus>("BACKLOG");
+  const [createDefaultDueDate, setCreateDefaultDueDate] = useState<string | undefined>(undefined);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+
+  // Queries & Data
   const { data: workspaces, isLoading: isWorkspacesLoading } = useWorkspaces();
   const currentWorkspace = workspaces?.find(
     (w) => w.slug === workspaceSlug || w.id === workspaceSlug
@@ -45,9 +92,68 @@ export default function ProjectHomePage({ params }: ProjectPageProps) {
     isError,
   } = useProject(currentWorkspace?.id, projectSlug);
 
+  const {
+    tasks,
+    totalCount,
+    isLoading: isTasksLoading,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  } = useTasks({
+    workspaceId: currentWorkspace?.id,
+    projectId: project?.id,
+    filters,
+  });
+
+  const updateTaskMutation = useUpdateTask(currentWorkspace?.id, project?.id);
+  const deleteTaskMutation = useDeleteTask(currentWorkspace?.id, project?.id);
+
   const isLoading = isWorkspacesLoading || isProjectLoading;
   const role = (currentWorkspace?.role || "MEMBER").toUpperCase() as WorkspaceRole;
   const canManage = role === "OWNER" || role === "ADMIN";
+
+  const handleOpenCreateWithStatus = (status: TaskStatus) => {
+    setCreateDefaultStatus(status);
+    setCreateDefaultDueDate(undefined);
+    setIsCreateOpen(true);
+  };
+
+  const handleOpenCreateWithDueDate = (dueDate: string) => {
+    setCreateDefaultStatus("BACKLOG");
+    setCreateDefaultDueDate(dueDate);
+    setIsCreateOpen(true);
+  };
+
+  const handleOpenGenericCreate = () => {
+    setCreateDefaultStatus("BACKLOG");
+    setCreateDefaultDueDate(undefined);
+    setIsCreateOpen(true);
+  };
+
+  const handleTaskClick = (task: Task) => {
+    setEditingTask(task);
+    setIsEditOpen(true);
+  };
+
+  const handleStatusChange = (taskId: string, newStatus: TaskStatus) => {
+    updateTaskMutation.mutate({
+      taskId,
+      data: { status: newStatus },
+      silent: false,
+    });
+  };
+
+  const handlePriorityChange = (taskId: string, newPriority: TaskPriority) => {
+    updateTaskMutation.mutate({
+      taskId,
+      data: { priority: newPriority },
+      silent: false,
+    });
+  };
+
+  const handleDeleteTask = (task: Task) => {
+    deleteTaskMutation.mutate(task.id);
+  };
 
   if (isLoading) {
     return (
@@ -79,18 +185,18 @@ export default function ProjectHomePage({ params }: ProjectPageProps) {
     );
   }
 
-  const createdDate = project.createdAt
-    ? new Date(project.createdAt).toLocaleDateString(undefined, {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      })
-    : null;
+  const hasActiveFilters = Boolean(
+    (filters.search && filters.search.trim().length > 0) ||
+      (filters.status && filters.status !== "ALL") ||
+      (filters.priority && filters.priority !== "ALL") ||
+      (filters.assigneeId && filters.assigneeId !== "ALL") ||
+      filters.overdue
+  );
 
   return (
-    <div className="flex flex-col gap-6 max-w-5xl mx-auto py-2">
+    <div className="flex flex-col gap-5 max-w-7xl mx-auto py-2 px-1 sm:px-2">
       {/* Project Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/60 pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/60 pb-4">
         <div className="flex items-center gap-3.5">
           <ProjectAvatar
             name={project.name}
@@ -107,94 +213,113 @@ export default function ProjectHomePage({ params }: ProjectPageProps) {
                 Project
               </Badge>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Part of{" "}
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <Link
                 href={`/dashboard/${workspaceSlug}`}
                 className="font-medium hover:underline text-foreground"
               >
                 {currentWorkspace?.name}
               </Link>
-              {createdDate && ` • Created on ${createdDate}`}
-            </p>
+              <ChevronRight className="size-3 opacity-60" />
+              <span>{project.name}</span>
+            </div>
           </div>
         </div>
 
-        {canManage && (
-          <Link
-            href={`/dashboard/${workspaceSlug}/projects/${project.slug}/settings`}
-          >
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-2 text-xs font-semibold cursor-pointer"
+        <div className="flex items-center gap-2.5 self-start sm:self-auto">
+          {/* View Selector Tabs */}
+          <ViewSelector
+            currentView={currentView}
+            onViewChange={setCurrentView}
+          />
+
+          {/* Project Settings Link */}
+          {canManage && (
+            <Link
+              href={`/dashboard/${workspaceSlug}/projects/${project.slug}/settings`}
             >
-              <Settings className="size-3.5" />
-              <span>Project Settings</span>
-            </Button>
-          </Link>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 px-2.5 flex items-center gap-1.5 text-xs font-semibold rounded-xl cursor-pointer"
+                title="Project Settings"
+              >
+                <Settings className="size-3.5" />
+                <span className="hidden md:inline">Settings</span>
+              </Button>
+            </Link>
+          )}
+        </div>
+      </div>
+
+      {/* Filter Toolbar */}
+      <TaskFilterBar
+        workspaceId={currentWorkspace!.id}
+        filters={filters}
+        onFiltersChange={setFilters}
+        onOpenCreateDialog={handleOpenGenericCreate}
+        totalCount={totalCount}
+      />
+
+      {/* Main View Area */}
+      <div className="mt-1">
+        {currentView === "table" && (
+          <TaskTableView
+            tasks={tasks}
+            isLoading={isTasksLoading}
+            hasNextPage={hasNextPage}
+            isFetchingNextPage={isFetchingNextPage}
+            onFetchNextPage={fetchNextPage}
+            onTaskClick={handleTaskClick}
+            onStatusChange={handleStatusChange}
+            onPriorityChange={handlePriorityChange}
+            onDeleteClick={handleDeleteTask}
+            onOpenCreateDialog={handleOpenGenericCreate}
+            hasActiveFilters={hasActiveFilters}
+          />
+        )}
+
+        {currentView === "kanban" && (
+          <TaskKanbanView
+            tasks={tasks}
+            onTaskClick={handleTaskClick}
+            onStatusChange={handleStatusChange}
+            onOpenCreateWithStatus={handleOpenCreateWithStatus}
+          />
+        )}
+
+        {currentView === "calendar" && (
+          <TaskCalendarView
+            tasks={tasks}
+            onTaskClick={handleTaskClick}
+            onOpenCreateWithDueDate={handleOpenCreateWithDueDate}
+          />
         )}
       </div>
 
-      {/* Project Overview Teaser for Phase 5 (Tasks) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="rounded-xl border border-border/60 bg-card p-4 flex flex-col gap-1 shadow-xs">
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>Created By</span>
-            <User className="size-3.5 text-primary" />
-          </div>
-          <span className="text-sm font-semibold text-foreground truncate mt-1">
-            {project.createdBy?.name || project.createdBy?.email || "Workspace Admin"}
-          </span>
-          <span className="text-[11px] text-muted-foreground truncate">
-            {project.createdBy?.email || ""}
-          </span>
-        </div>
+      {/* Dialogs */}
+      {currentWorkspace && project && (
+        <>
+          <CreateTaskDialog
+            open={isCreateOpen}
+            onOpenChange={setIsCreateOpen}
+            workspaceId={currentWorkspace.id}
+            projectId={project.id}
+            defaultStatus={createDefaultStatus}
+            defaultDueDate={createDefaultDueDate}
+          />
 
-        <div className="rounded-xl border border-border/60 bg-card p-4 flex flex-col gap-1 shadow-xs">
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>Workspace</span>
-            <Layers className="size-3.5 text-primary" />
-          </div>
-          <span className="text-sm font-semibold text-foreground truncate mt-1">
-            {currentWorkspace?.name}
-          </span>
-          <span className="text-[11px] text-muted-foreground truncate">
-            Role: {role}
-          </span>
-        </div>
-
-        <div className="rounded-xl border border-border/60 bg-card p-4 flex flex-col gap-1 shadow-xs">
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>Status</span>
-            <CheckCircle2 className="size-3.5 text-emerald-500" />
-          </div>
-          <span className="text-sm font-semibold text-foreground truncate mt-1">
-            Active
-          </span>
-          <span className="text-[11px] text-emerald-600 dark:text-emerald-400">
-            Ready for tasks
-          </span>
-        </div>
-      </div>
-
-      {/* Phase 5 Tasks Preview Teaser */}
-      <div className="rounded-2xl border border-dashed border-border/80 bg-muted/20 p-8 sm:p-12 text-center flex flex-col items-center justify-center gap-3">
-        <div className="size-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-1">
-          <FolderKanban className="size-6" />
-        </div>
-        <div className="space-y-1 max-w-md">
-          <h3 className="text-base font-bold text-foreground flex items-center justify-center gap-2">
-            <span>Task Engine (Phase 5)</span>
-            <Badge variant="secondary" className="text-[10px] font-medium">
-              Coming Up
-            </Badge>
-          </h3>
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            Phase 5 will bring interactive <strong>Table</strong>, drag-and-drop <strong>Kanban</strong>, and monthly <strong>Calendar</strong> views directly inside this project board.
-          </p>
-        </div>
-      </div>
+          <EditTaskDialog
+            task={editingTask}
+            open={isEditOpen}
+            onOpenChange={setIsEditOpen}
+            workspaceId={currentWorkspace.id}
+            projectId={project.id}
+            userRole={role}
+            currentUserId={user?.id}
+          />
+        </>
+      )}
     </div>
   );
 }
