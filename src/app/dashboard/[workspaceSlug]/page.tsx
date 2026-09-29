@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
@@ -28,12 +29,17 @@ import { WorkspaceRole } from "@/features/workspace/constants";
 import { TaskStatusBadge } from "@/features/tasks/components/task-status-badge";
 import { TaskPriorityBadge } from "@/features/tasks/components/task-priority-badge";
 import { TaskAssigneeAvatar } from "@/features/tasks/components/task-assignee-avatar";
+import { EditTaskDialog } from "@/features/tasks/components/edit-task-dialog";
 import type { Task } from "@/features/tasks/types";
+import { useAuth } from "@/features/auth/context/auth-context";
+import { en } from "@/locales/en";
 import { cn } from "@/lib/utils";
 
 export default function WorkspaceDashboardPage() {
   const params = useParams();
   const workspaceSlug = params?.workspaceSlug as string;
+  const [selectedTask, setSelectedTask] = React.useState<Task | null>(null);
+  const { user } = useAuth();
 
   const { data: workspaces, isLoading: isWorkspacesLoading } = useWorkspaces();
 
@@ -175,7 +181,7 @@ export default function WorkspaceDashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column (2 cols wide): Recent Tasks */}
         <div className="lg:col-span-2 space-y-6">
-          <Card className="rounded-2xl border border-border/80 shadow-xs">
+          <Card className="rounded-2xl border border-border/80 shadow-xs overflow-hidden">
             <CardHeader className="flex flex-row items-center justify-between pb-3">
               <div>
                 <CardTitle className="text-base font-bold flex items-center gap-2">
@@ -197,97 +203,122 @@ export default function WorkspaceDashboardPage() {
                 </Button>
               </Link>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-0">
               {recentTasks.length > 0 ? (
-                <div className="divide-y divide-border/40">
-                  {recentTasks.map((task) => {
-                    const isOverdue =
-                      task.dueDate &&
-                      task.status !== "DONE" &&
-                      isPast(new Date(task.dueDate)) &&
-                      !isToday(new Date(task.dueDate));
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-muted/40 border-y border-border/60 text-muted-foreground font-semibold select-none">
+                      <tr>
+                        <th className="py-2.5 px-3.5 w-32">{en.tasks.tableHeaders.status}</th>
+                        <th className="py-2.5 px-3.5 min-w-[180px]">{en.tasks.tableHeaders.task}</th>
+                        <th className="py-2.5 px-3.5 w-36">Project</th>
+                        <th className="py-2.5 px-3.5 w-28">{en.tasks.tableHeaders.priority}</th>
+                        <th className="py-2.5 px-3.5 w-32">{en.tasks.tableHeaders.dueDate}</th>
+                        <th className="py-2.5 px-3.5 w-36">{en.tasks.tableHeaders.assignee}</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/40">
+                      {recentTasks.map((task) => {
+                        const isOverdue =
+                          task.dueDate &&
+                          task.status !== "DONE" &&
+                          isPast(new Date(task.dueDate)) &&
+                          !isToday(new Date(task.dueDate));
 
-                    const formattedDate = task.dueDate
-                      ? format(new Date(task.dueDate), "MMM d")
-                      : null;
+                        const formattedDate = task.dueDate
+                          ? format(new Date(task.dueDate), "MMM d, yyyy")
+                          : null;
 
-                    return (
-                      <div
-                        key={task.id}
-                        className="py-3 flex items-center justify-between gap-3 group hover:bg-muted/20 px-2 rounded-xl transition-colors"
-                      >
-                        <div className="flex items-center gap-3 min-w-0 flex-1">
-                          <TaskStatusBadge
-                            status={task.status}
-                            size="sm"
-                            className="shrink-0"
-                          />
-                          <div className="flex flex-col min-w-0 flex-1">
-                            <span
-                              className={cn(
-                                "text-xs font-semibold text-foreground truncate",
-                                task.status === "DONE" &&
-                                  "line-through text-muted-foreground"
-                              )}
-                            >
-                              {task.title}
-                            </span>
-                            {task.project && (
-                              <Link
-                                href={`/dashboard/${workspaceSlug}/projects/${task.project.slug}`}
-                                className="text-[11px] text-muted-foreground hover:text-primary flex items-center gap-1 mt-0.5 truncate w-fit"
+                        return (
+                          <tr
+                            key={task.id}
+                            onClick={() => setSelectedTask(task)}
+                            className="group hover:bg-muted/30 transition-colors cursor-pointer"
+                          >
+                            {/* Status */}
+                            <td className="py-2.5 px-3.5">
+                              <TaskStatusBadge
+                                status={task.status}
+                                size="sm"
+                              />
+                            </td>
+
+                            {/* Task Title */}
+                            <td className="py-2.5 px-3.5 max-w-xs">
+                              <span
+                                className={cn(
+                                  "font-semibold text-foreground text-xs line-clamp-1 truncate block group-hover:text-primary transition-colors",
+                                  task.status === "DONE" &&
+                                    "line-through text-muted-foreground"
+                                )}
+                                title={task.title}
                               >
-                                <FolderKanban className="size-3 shrink-0 opacity-60" />
-                                <span>{task.project.name}</span>
-                              </Link>
-                            )}
-                          </div>
-                        </div>
+                                {task.title}
+                              </span>
+                            </td>
 
-                        <div className="flex items-center gap-3 shrink-0">
-                          <TaskPriorityBadge
-                            priority={task.priority}
-                            size="sm"
-                            className="hidden sm:inline-flex"
-                          />
-
-                          {formattedDate && (
-                            <span
-                              className={cn(
-                                "text-[11px] font-medium hidden md:inline-flex items-center gap-1",
-                                isOverdue
-                                  ? "text-rose-500 font-semibold"
-                                  : "text-muted-foreground"
+                            {/* Project */}
+                            <td className="py-2.5 px-3.5">
+                              {task.project ? (
+                                <Link
+                                  href={`/dashboard/${workspaceSlug}/projects/${task.project.slug}`}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors truncate max-w-[140px]"
+                                  title={task.project.name}
+                                >
+                                  <FolderKanban className="size-3.5 shrink-0 opacity-60" />
+                                  <span className="truncate">{task.project.name}</span>
+                                </Link>
+                              ) : (
+                                <span className="text-muted-foreground/60 text-[11px]">—</span>
                               )}
-                            >
-                              {isOverdue && (
-                                <AlertCircle className="size-3 text-rose-500" />
+                            </td>
+
+                            {/* Priority */}
+                            <td className="py-2.5 px-3.5">
+                              <TaskPriorityBadge
+                                priority={task.priority}
+                                size="sm"
+                              />
+                            </td>
+
+                            {/* Due Date */}
+                            <td className="py-2.5 px-3.5">
+                              {formattedDate ? (
+                                <div
+                                  className={cn(
+                                    "inline-flex items-center gap-1.5 text-xs font-medium",
+                                    isOverdue
+                                      ? "text-rose-600 dark:text-rose-400 font-semibold"
+                                      : "text-muted-foreground"
+                                  )}
+                                >
+                                  {isOverdue && (
+                                    <AlertCircle className="size-3.5 text-rose-500 shrink-0" />
+                                  )}
+                                  <span>{formattedDate}</span>
+                                </div>
+                              ) : (
+                                <span className="text-muted-foreground/60 text-[11px]">—</span>
                               )}
-                              <span>{formattedDate}</span>
-                            </span>
-                          )}
+                            </td>
 
-                          <TaskAssigneeAvatar
-                            assignee={task.assignee}
-                            size="xs"
-                          />
-
-                          {task.project && (
-                            <Link
-                              href={`/dashboard/${workspaceSlug}/projects/${task.project.slug}`}
-                              className="size-7 rounded-lg inline-flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted opacity-0 group-hover:opacity-100 transition-opacity"
-                              title="Go to project board"
-                            >
-                              <ExternalLink className="size-3.5" />
-                            </Link>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
+                            {/* Assignee */}
+                            <td className="py-2.5 px-3.5">
+                              <TaskAssigneeAvatar
+                                assignee={task.assignee}
+                                size="sm"
+                                showName
+                              />
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground">
+                <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground p-6">
                   <CheckCircle2 className="size-8 opacity-40 mb-2" />
                   <p className="text-xs font-medium">No tasks created yet</p>
                   <p className="text-[11px] text-muted-foreground mt-0.5">
@@ -419,6 +450,19 @@ export default function WorkspaceDashboardPage() {
           </Card>
         </div>
       </div>
+
+      {/* Edit Task Modal */}
+      {selectedTask && (
+        <EditTaskDialog
+          task={selectedTask}
+          open={Boolean(selectedTask)}
+          onOpenChange={(open) => !open && setSelectedTask(null)}
+          workspaceId={workspace.id}
+          projectId={selectedTask.projectId || selectedTask.project?.id || ""}
+          userRole={workspace.role as any}
+          currentUserId={user?.id}
+        />
+      )}
     </div>
   );
 }

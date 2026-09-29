@@ -7,7 +7,6 @@ import { cn } from "@/lib/utils";
 import { en } from "@/locales/en";
 import { Separator } from "@/components/ui/separator";
 import { WorkspaceSwitcher } from "@/features/workspace/components/settings/workspace-switcher";
-import { ProjectSwitcher } from "@/features/projects/components/project-switcher";
 import { ProjectsSidebarList } from "@/features/projects/components/projects-sidebar-list";
 import { useWorkspaces } from "@/features/workspace/hooks/use-workspaces";
 import { Navigation } from "./navigation";
@@ -67,9 +66,6 @@ export function Sidebar({ open, onClose }: SidebarProps) {
 
         <div className="flex flex-col gap-3 mb-3">
           <WorkspaceSwitcher />
-          {currentWorkspace && (
-            <ProjectSwitcher />
-          )}
         </div>
 
         <Navigation onNavigate={onClose} />
