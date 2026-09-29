@@ -4,6 +4,7 @@ export * from "./schema";
 
 export * from "./hooks/use-tasks";
 export * from "./hooks/use-task";
+export * from "./hooks/use-my-tasks";
 export * from "./hooks/use-create-task";
 export * from "./hooks/use-update-task";
 export * from "./hooks/use-delete-task";
@@ -18,3 +19,4 @@ export * from "./components/task-filter-bar";
 export * from "./components/task-table-view";
 export * from "./components/task-kanban-view";
 export * from "./components/task-calendar-view";
+export * from "./components/my-tasks-table";
