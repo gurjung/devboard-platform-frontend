@@ -9,7 +9,6 @@ import imageCompression from "browser-image-compression";
 import { toast } from "sonner";
 import { Loader2, Upload, X, ImageIcon } from "lucide-react";
 import { en } from "@/locales/en";
-import { apiClient } from "@/lib/api-client";
 
 import { FormDialog } from "@/components/shared/form-dialog";
 import { DialogActions } from "@/components/shared/dialog-actions";
@@ -53,7 +52,6 @@ export function CreateWorkspaceDialog({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isCompressing, setIsCompressing] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -75,7 +73,6 @@ export function CreateWorkspaceDialog({
     setIsCompressing(false);
     setIsUploading(false);
     setLogoFile(null);
-    setLogoDataUrl(null);
     if (previewUrl) {
       URL.revokeObjectURL(previewUrl);
       setPreviewUrl(null);
@@ -123,12 +120,6 @@ export function CreateWorkspaceDialog({
 
       const objectUrl = URL.createObjectURL(compressedFile);
       setPreviewUrl(objectUrl);
-
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setLogoDataUrl(reader.result as string);
-      };
-      reader.readAsDataURL(compressedFile);
     } catch (err) {
       console.error("Error compressing image:", err);
       toast.error(en.workspace.createDialog.toastProcessError);
@@ -143,7 +134,6 @@ export function CreateWorkspaceDialog({
       setPreviewUrl(null);
     }
     setLogoFile(null);
-    setLogoDataUrl(null);
     form.setValue("logo", "");
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -151,34 +141,24 @@ export function CreateWorkspaceDialog({
   };
 
   const onSubmit = async (data: CreateWorkspaceInput) => {
-    let finalLogoUrl = logoDataUrl;
+    let finalLogoUrl: string | null = null;
     if (logoFile) {
       try {
         setIsUploading(true);
         finalLogoUrl = await uploadWorkspaceLogo(logoFile);
       } catch (err: any) {
-        console.warn("Supabase upload skipped or failed, using fallback:", err?.message);
+        toast.error(err?.message || "Failed to upload workspace logo.");
+        setIsUploading(false);
+        return;
       } finally {
         setIsUploading(false);
       }
     }
 
     createWorkspaceMutation.mutate(
-      { name: data.name },
+      { name: data.name, logo: finalLogoUrl },
       {
-        onSuccess: async (newWorkspace) => {
-          if (finalLogoUrl && newWorkspace?.id) {
-            try {
-              setIsUploading(true);
-              await apiClient.patch(`/workspaces/${newWorkspace.id}`, {
-                logo: finalLogoUrl,
-              });
-            } catch (err) {
-              console.error("Failed to update logo:", err);
-            } finally {
-              setIsUploading(false);
-            }
-          }
+        onSuccess: (newWorkspace) => {
           toast.success(en.workspace.createDialog.toastSuccess);
           handleClose();
           router.push(`/dashboard/${newWorkspace.slug}`);

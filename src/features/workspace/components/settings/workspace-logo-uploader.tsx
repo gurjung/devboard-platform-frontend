@@ -64,12 +64,6 @@ export function WorkspaceLogoUploader({
       const objectUrl = URL.createObjectURL(compressedFile);
       setLogoFile(compressedFile);
       setPreviewUrl(objectUrl);
-
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormValue(reader.result as string);
-      };
-      reader.readAsDataURL(compressedFile);
     } catch (err) {
       console.error("Error compressing image:", err);
       toast.error(en.workspace.logoUploader.toastProcessError);

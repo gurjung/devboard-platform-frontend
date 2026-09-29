@@ -107,13 +107,15 @@ export function WorkspaceForm({
   };
 
   const onSubmit = async (data: CreateWorkspaceInput) => {
-    let finalLogoUrl = data.logo;
+    let finalLogoUrl = data.logo || null;
     if (logoFile) {
       try {
         setIsUploading(true);
         finalLogoUrl = await uploadWorkspaceLogo(logoFile);
       } catch (err: any) {
-        console.warn("Supabase upload skipped or failed, using fallback:", err?.message);
+        toast.error(err?.message || "Failed to upload workspace logo.");
+        setIsUploading(false);
+        return;
       } finally {
         setIsUploading(false);
       }
@@ -121,18 +123,9 @@ export function WorkspaceForm({
 
     if (mode === "create") {
       createWorkspaceMutation.mutate(
-        { name: data.name },
+        { name: data.name, logo: finalLogoUrl },
         {
-          onSuccess: async (newWorkspace) => {
-            if (finalLogoUrl && newWorkspace?.id) {
-              try {
-                await apiClient.patch(`/workspaces/${newWorkspace.id}`, {
-                  logo: finalLogoUrl,
-                });
-              } catch (err) {
-                console.error("Failed to save logo:", err);
-              }
-            }
+          onSuccess: (newWorkspace) => {
             toast.success(en.workspace.form.toastCreateSuccess);
             handleReset();
             if (onSuccess) {
