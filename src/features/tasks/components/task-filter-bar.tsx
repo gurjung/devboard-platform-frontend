@@ -111,7 +111,7 @@ export function TaskFilterBar({
       {/* Second row: Dropdown filters + Overdue chip + Clear */}
       <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
         {/* Status Filter */}
-        <div className="w-36">
+        <div className="w-auto min-w-36">
           <Select
             value={filters.status || "ALL"}
             onValueChange={(val) =>
@@ -121,7 +121,10 @@ export function TaskFilterBar({
               })
             }
           >
-            <SelectTrigger className="h-8 text-xs rounded-xl bg-card border-border/70">
+            <SelectTrigger className="h-8 text-xs rounded-xl bg-card border-border/70 flex items-center gap-1.5 px-2.5">
+              <span className="text-muted-foreground font-medium shrink-0">
+                {en.tasks.tableHeaders.status}:
+              </span>
               <SelectValue placeholder={en.tasks.filterByStatus} />
             </SelectTrigger>
             <SelectContent>
@@ -145,7 +148,7 @@ export function TaskFilterBar({
         </div>
 
         {/* Priority Filter */}
-        <div className="w-36">
+        <div className="w-auto min-w-36">
           <Select
             value={filters.priority || "ALL"}
             onValueChange={(val) =>
@@ -155,7 +158,10 @@ export function TaskFilterBar({
               })
             }
           >
-            <SelectTrigger className="h-8 text-xs rounded-xl bg-card border-border/70">
+            <SelectTrigger className="h-8 text-xs rounded-xl bg-card border-border/70 flex items-center gap-1.5 px-2.5">
+              <span className="text-muted-foreground font-medium shrink-0">
+                {en.tasks.tableHeaders.priority}:
+              </span>
               <SelectValue placeholder={en.tasks.filterByPriority} />
             </SelectTrigger>
             <SelectContent>
@@ -179,7 +185,7 @@ export function TaskFilterBar({
         </div>
 
         {/* Assignee Filter */}
-        <div className="w-40">
+        <div className="w-auto min-w-40">
           <Select
             value={filters.assigneeId || "ALL"}
             onValueChange={(val) =>
@@ -189,7 +195,10 @@ export function TaskFilterBar({
               })
             }
           >
-            <SelectTrigger className="h-8 text-xs rounded-xl bg-card border-border/70">
+            <SelectTrigger className="h-8 text-xs rounded-xl bg-card border-border/70 flex items-center gap-1.5 px-2.5">
+              <span className="text-muted-foreground font-medium shrink-0">
+                {en.tasks.tableHeaders.assignee}:
+              </span>
               <SelectValue placeholder={en.tasks.filterByAssignee} />
             </SelectTrigger>
             <SelectContent>

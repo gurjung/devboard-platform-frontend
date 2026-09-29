@@ -248,7 +248,7 @@ export default function MyTasksPage({ params }: MyTasksPageProps) {
           {/* Quick Filters */}
           <div className="flex flex-wrap items-center gap-2 text-xs">
             {/* Status Filter */}
-            <div className="w-36">
+            <div className="w-auto min-w-36">
               <Select
                 value={filters.status}
                 onValueChange={(val) =>
@@ -258,7 +258,10 @@ export default function MyTasksPage({ params }: MyTasksPageProps) {
                   }))
                 }
               >
-                <SelectTrigger className="h-8 text-xs rounded-xl bg-card border-border/70">
+                <SelectTrigger className="h-8 text-xs rounded-xl bg-card border-border/70 flex items-center gap-1.5 px-2.5">
+                  <span className="text-muted-foreground font-medium shrink-0">
+                    Status:
+                  </span>
                   <SelectValue placeholder="Filter status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -282,7 +285,7 @@ export default function MyTasksPage({ params }: MyTasksPageProps) {
             </div>
 
             {/* Priority Filter */}
-            <div className="w-36">
+            <div className="w-auto min-w-36">
               <Select
                 value={filters.priority}
                 onValueChange={(val) =>
@@ -292,7 +295,10 @@ export default function MyTasksPage({ params }: MyTasksPageProps) {
                   }))
                 }
               >
-                <SelectTrigger className="h-8 text-xs rounded-xl bg-card border-border/70">
+                <SelectTrigger className="h-8 text-xs rounded-xl bg-card border-border/70 flex items-center gap-1.5 px-2.5">
+                  <span className="text-muted-foreground font-medium shrink-0">
+                    Priority:
+                  </span>
                   <SelectValue placeholder="Filter priority" />
                 </SelectTrigger>
                 <SelectContent>

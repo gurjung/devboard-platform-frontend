@@ -16,8 +16,10 @@ export function useMyTasks({
   filters = {},
   pageSize = 25,
 }: UseMyTasksOptions) {
+  const { search, ...serverFilters } = filters;
+
   const query = useInfiniteQuery({
-    queryKey: ["my-tasks", workspaceId, filters],
+    queryKey: ["my-tasks", workspaceId, serverFilters],
     queryFn: async ({ pageParam }) => {
       if (!workspaceId) {
         return { tasks: [], nextCursor: null, hasMore: false, totalCount: 0 };
@@ -29,19 +31,19 @@ export function useMyTasks({
         params.append("cursor", String(pageParam));
       }
 
-      if (filters.status && filters.status !== "ALL") {
-        params.append("status", filters.status);
+      if (serverFilters.status && serverFilters.status !== "ALL") {
+        params.append("status", serverFilters.status);
       }
 
-      if (filters.priority && filters.priority !== "ALL") {
-        params.append("priority", filters.priority);
+      if (serverFilters.priority && serverFilters.priority !== "ALL") {
+        params.append("priority", serverFilters.priority);
       }
 
-      if (filters.dueDate) {
-        params.append("dueDate", filters.dueDate);
+      if (serverFilters.dueDate) {
+        params.append("dueDate", serverFilters.dueDate);
       }
 
-      if (filters.overdue) {
+      if (serverFilters.overdue) {
         params.append("overdue", "true");
       }
 
@@ -63,8 +65,8 @@ export function useMyTasks({
     if (!query.data?.pages) return [];
     const flattened = query.data.pages.flatMap((page) => page.tasks || []);
 
-    if (filters.search && filters.search.trim() !== "") {
-      const searchLower = filters.search.toLowerCase().trim();
+    if (search && search.trim() !== "") {
+      const searchLower = search.toLowerCase().trim();
       return flattened.filter(
         (task) =>
           task.title.toLowerCase().includes(searchLower) ||
@@ -74,7 +76,7 @@ export function useMyTasks({
     }
 
     return flattened;
-  }, [query.data?.pages, filters.search]);
+  }, [query.data?.pages, search]);
 
   const totalCount =
     query.data?.pages?.[0]?.totalCount ?? allTasks.length;

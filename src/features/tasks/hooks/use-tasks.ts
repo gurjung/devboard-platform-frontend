@@ -18,8 +18,10 @@ export function useTasks({
   filters = {},
   pageSize = 25,
 }: UseTasksOptions) {
+  const { search, ...serverFilters } = filters;
+
   const query = useInfiniteQuery({
-    queryKey: ["tasks", workspaceId, projectId, filters],
+    queryKey: ["tasks", workspaceId, projectId, serverFilters],
     queryFn: async ({ pageParam }) => {
       if (!workspaceId || !projectId) {
         return { tasks: [], nextCursor: null, hasMore: false, totalCount: 0 };
@@ -31,26 +33,26 @@ export function useTasks({
         params.append("cursor", String(pageParam));
       }
 
-      if (filters.status && filters.status !== "ALL") {
-        params.append("status", filters.status);
+      if (serverFilters.status && serverFilters.status !== "ALL") {
+        params.append("status", serverFilters.status);
       }
 
-      if (filters.priority && filters.priority !== "ALL") {
-        params.append("priority", filters.priority);
+      if (serverFilters.priority && serverFilters.priority !== "ALL") {
+        params.append("priority", serverFilters.priority);
       }
 
-      if (filters.assigneeId && filters.assigneeId !== "ALL") {
+      if (serverFilters.assigneeId && serverFilters.assigneeId !== "ALL") {
         params.append(
           "assigneeId",
-          filters.assigneeId === "UNASSIGNED" ? "unassigned" : filters.assigneeId
+          serverFilters.assigneeId === "UNASSIGNED" ? "unassigned" : serverFilters.assigneeId
         );
       }
 
-      if (filters.dueDate) {
-        params.append("dueDate", filters.dueDate);
+      if (serverFilters.dueDate) {
+        params.append("dueDate", serverFilters.dueDate);
       }
 
-      if (filters.overdue) {
+      if (serverFilters.overdue) {
         params.append("overdue", "true");
       }
 
@@ -72,8 +74,8 @@ export function useTasks({
     if (!query.data?.pages) return [];
     const flattened = query.data.pages.flatMap((page) => page.tasks || []);
 
-    if (filters.search && filters.search.trim() !== "") {
-      const searchLower = filters.search.toLowerCase().trim();
+    if (search && search.trim() !== "") {
+      const searchLower = search.toLowerCase().trim();
       return flattened.filter(
         (task) =>
           task.title.toLowerCase().includes(searchLower) ||
@@ -82,7 +84,7 @@ export function useTasks({
     }
 
     return flattened;
-  }, [query.data?.pages, filters.search]);
+  }, [query.data?.pages, search]);
 
   const totalCount =
     query.data?.pages?.[0]?.totalCount ?? allTasks.length;
