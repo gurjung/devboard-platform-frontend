@@ -1,11 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { HiXMark } from "react-icons/hi2";
 import { cn } from "@/lib/utils";
 import { en } from "@/locales/en";
 import { Separator } from "@/components/ui/separator";
 import { WorkspaceSwitcher } from "@/features/workspace/components/settings/workspace-switcher";
+import { ProjectsSidebarList } from "@/features/projects/components/projects-sidebar-list";
+import { useWorkspaces } from "@/features/workspace/hooks/use-workspaces";
 import { Navigation } from "./navigation";
 
 interface SidebarProps {
@@ -14,6 +17,14 @@ interface SidebarProps {
 }
 
 export function Sidebar({ open, onClose }: SidebarProps) {
+  const params = useParams();
+  const workspaceSlug = params?.workspaceSlug as string | undefined;
+  const { data: workspaces } = useWorkspaces();
+
+  const currentWorkspace = workspaces?.find(
+    (w) => w.slug === workspaceSlug || w.id === workspaceSlug
+  );
+
   return (
     <>
       {/* Mobile Backdrop */}
@@ -58,6 +69,15 @@ export function Sidebar({ open, onClose }: SidebarProps) {
         </div>
 
         <Navigation onNavigate={onClose} />
+
+        <Separator className="my-3" />
+
+        <ProjectsSidebarList
+          workspaceId={currentWorkspace?.id}
+          workspaceSlug={currentWorkspace?.slug || workspaceSlug}
+          currentUserRole={currentWorkspace?.role}
+          onNavigate={onClose}
+        />
       </aside>
     </>
   );
