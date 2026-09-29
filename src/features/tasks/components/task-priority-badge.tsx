@@ -38,17 +38,19 @@ export function TaskPriorityBadge({
   const badgeContent = (
     <div
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-lg border font-medium transition-colors select-none",
+        "inline-flex items-center justify-center gap-1.5 rounded-lg border font-medium transition-colors select-none shrink-0",
         config.badgeClass,
-        size === "sm" ? "px-2 py-0.5 text-[11px]" : "px-2.5 py-1 text-xs",
+        size === "sm"
+          ? "w-[80px] px-2 py-0.5 text-[11px]"
+          : "w-[88px] px-2.5 py-1 text-xs",
         interactive && "cursor-pointer hover:opacity-85",
         className
       )}
     >
-      <Icon className={cn(size === "sm" ? "size-3" : "size-3.5", config.color)} />
-      <span>{config.label}</span>
+      <Icon className={cn(size === "sm" ? "size-3" : "size-3.5", config.color, "shrink-0")} />
+      <span className="truncate">{config.label}</span>
       {interactive && onPriorityChange && (
-        <ChevronDown className="size-3 opacity-60 ml-0.5" />
+        <ChevronDown className="size-3 opacity-60 ml-0.5 shrink-0" />
       )}
     </div>
   );

@@ -89,24 +89,21 @@ export default function ProjectSettingsPage({ params }: ProjectSettingsPageProps
   }
 
   return (
-    <div className="flex flex-col gap-6 max-w-4xl mx-auto py-2">
-      {/* Header */}
-      <div className="flex items-center gap-3 border-b border-border/60 pb-5">
+    <div className="flex flex-col gap-6 max-w-xl mx-auto py-4">
+      <div className="text-center relative">
         <Link
           href={`/dashboard/${workspaceSlug}/projects/${project.slug}`}
-          className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition cursor-pointer"
+          className="absolute left-0 top-0.5 p-2 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground transition cursor-pointer"
+          title="Back to project"
         >
           <ArrowLeft className="size-4" />
         </Link>
-        <div className="space-y-0.5">
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            {en.project.settingsPage.title}
-          </h1>
-          <p className="text-xs text-muted-foreground">
-            Manage settings and identity for{" "}
-            <strong className="text-foreground">{project.name}</strong>.
-          </p>
-        </div>
+        <h1 className="text-2xl font-bold tracking-tight text-center">
+          {en.project.settingsPage.title}
+        </h1>
+        <p className="text-sm text-muted-foreground mt-1 text-center">
+          {en.project.settingsPage.description}
+        </p>
       </div>
 
       <ProjectForm
