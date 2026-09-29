@@ -3,6 +3,7 @@
 import { useParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { MembersList } from "@/features/workspace/components/members/members-list";
+import { InviteMemberDialog } from "@/features/invites/components/invite-member-dialog";
 import { useWorkspaces } from "@/features/workspace/hooks/use-workspaces";
 import { useAuth } from "@/features/auth/context/auth-context";
 import { en } from "@/locales/en";
@@ -41,16 +42,28 @@ export default function WorkspaceMembersPage() {
   }
 
   const role = (workspace.role || "MEMBER").toUpperCase() as WorkspaceRole;
+  const canInvite = role === "OWNER" || role === "ADMIN";
 
   return (
     <div className="flex flex-col gap-6 max-w-4xl mx-auto py-4">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold tracking-tight text-center">
-          {en.workspace.members.pageTitle}
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1 text-center">
-          {en.workspace.members.pageDescription}
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/60 pb-5">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">
+            {en.workspace.members.pageTitle}
+          </h1>
+          <p className="text-xs text-muted-foreground mt-1">
+            {en.workspace.members.pageDescription}
+          </p>
+        </div>
+
+        {canInvite && (
+          <div className="shrink-0">
+            <InviteMemberDialog
+              workspaceId={workspace.id}
+              workspaceName={workspace.name}
+            />
+          </div>
+        )}
       </div>
 
       <MembersList
