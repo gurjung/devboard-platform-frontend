@@ -8,6 +8,8 @@ import React, {
   useCallback,
   useRef,
 } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import {
   getSocket,
   disconnectSocket,
@@ -36,6 +38,7 @@ const SocketContext = createContext<SocketContextType>({
 
 export function SocketProvider({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, user } = useAuth();
+  const queryClient = useQueryClient();
   const [socket, setSocket] = useState<TypedSocket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const activeRoomsRef = useRef<{
@@ -74,8 +77,25 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       setIsConnected(false);
     };
 
+    const handleTaskAssigned = ({
+      task,
+      assignedBy,
+    }: {
+      task: any;
+      assignedBy: { userId: string; email: string };
+    }) => {
+      // Invalidate personal assigned task queries
+      queryClient.invalidateQueries({ queryKey: ["my-tasks"] });
+
+      // Trigger personal assignment notification toast
+      toast.info(`Task assigned to you: "${task.title}"`, {
+        description: `Assigned by ${assignedBy.email || "a team member"}`,
+      });
+    };
+
     s.on("connect", handleConnect);
     s.on("disconnect", handleDisconnect);
+    s.on("task:assigned", handleTaskAssigned);
 
     if (!s.connected) {
       s.connect();
@@ -86,8 +106,9 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     return () => {
       s.off("connect", handleConnect);
       s.off("disconnect", handleDisconnect);
+      s.off("task:assigned", handleTaskAssigned);
     };
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user, queryClient]);
 
   const joinProject = useCallback(
     (projectId: string) => {
