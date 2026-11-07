@@ -9,6 +9,7 @@ export interface PresenceUser {
 }
 
 export interface ServerToClientEvents {
+  // Tasks
   "task:created": (data: { task: Task; actorId: string }) => void;
   "task:updated": (data: { task: Task; actorId: string }) => void;
   "task:deleted": (data: { taskId: string; actorId: string }) => void;
@@ -16,7 +17,23 @@ export interface ServerToClientEvents {
     task: Task;
     assignedBy: { userId: string; email: string };
   }) => void;
+
+  // Presence
   "project:presence": (data: { projectId: string; users: PresenceUser[] }) => void;
+
+  // Projects
+  "project:created": (data: { project: any; actorId: string }) => void;
+  "project:updated": (data: { project: any; actorId: string }) => void;
+  "project:deleted": (data: { projectId: string; actorId: string }) => void;
+
+  // Members
+  "member:updated": (data: { member: any; actorId: string }) => void;
+  "member:removed": (data: { memberId: string; actorId: string }) => void;
+
+  // Workspaces
+  "workspace:updated": (data: { workspace: any; actorId: string }) => void;
+  "workspace:deleted": (data: { workspaceId: string; actorId: string }) => void;
+
   error: (data: { message: string }) => void;
 }
 
@@ -44,7 +61,6 @@ export const getSocketUrl = (): string => {
 
 export const getSocket = (): TypedSocket => {
   if (typeof window === "undefined") {
-    // Return dummy or throw on server-side
     return null as unknown as TypedSocket;
   }
 
@@ -98,4 +114,3 @@ export const disconnectSocket = () => {
     socketInstance = null;
   }
 };
-

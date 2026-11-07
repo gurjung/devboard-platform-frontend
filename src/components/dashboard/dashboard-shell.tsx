@@ -1,9 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { useParams } from "next/navigation";
 import { Sidebar } from "./sidebar";
 import { Navbar } from "./navbar";
 import { NetworkStatusBanner } from "@/components/shared/network-status-banner";
+import { useWorkspaces } from "@/features/workspace/hooks/use-workspaces";
+import { useWorkspaceRealtimeSync } from "@/features/workspace/hooks/use-workspace-realtime-sync";
 
 interface User {
   name?: string | null;
@@ -18,6 +21,19 @@ interface DashboardShellProps {
 
 export function DashboardShell({ user, children }: DashboardShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const params = useParams();
+  const workspaceSlug = params?.workspaceSlug as string | undefined;
+
+  const { data: workspaces } = useWorkspaces();
+  const currentWorkspace = workspaces?.find(
+    (w) => w.slug === workspaceSlug || w.id === workspaceSlug
+  );
+
+  // Real-time synchronization for projects, members, and workspace events
+  useWorkspaceRealtimeSync({
+    workspaceId: currentWorkspace?.id,
+    workspaceSlug,
+  });
 
   return (
     <div className="flex min-h-screen bg-background">
