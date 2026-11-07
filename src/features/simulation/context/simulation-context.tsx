@@ -9,8 +9,9 @@ import React, {
   useCallback,
 } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useAuth } from "@/features/auth/context/auth-context";
 import {
   SimulationScenario,
   SimulationStep,
@@ -18,9 +19,15 @@ import {
   SimulationLog,
   ChaosConfig,
   LogLevel,
+  StoryBanner,
 } from "../types";
 import { chaosController } from "../chaos-controller";
-import { AVAILABLE_SCENARIOS } from "../scenarios";
+import {
+  AVAILABLE_SCENARIOS,
+  AUTH_SCENARIOS,
+  DASHBOARD_SCENARIOS,
+} from "../scenarios";
+import { isDemoMode, setDemoMode, subscribeDemoMode } from "../mock-demo-data";
 
 interface SimulationContextType {
   scenarios: SimulationScenario[];
@@ -32,8 +39,17 @@ interface SimulationContextType {
   chaosConfig: ChaosConfig;
   logs: SimulationLog[];
   isFloatingOpen: boolean;
+  isAuthenticated: boolean;
+  isDemo: boolean;
+  highlightedTaskId: string | null;
+  spotlightMessage: string | null;
+  storyBanner: StoryBanner | null;
+  setSpotlight: (taskId: string | null, message?: string | null) => void;
+  setStoryBanner: (banner: StoryBanner | null) => void;
   setIsFloatingOpen: (open: boolean) => void;
   runScenario: (scenarioId: string) => Promise<void>;
+  launchInstantDemo: () => Promise<void>;
+  exitDemo: () => Promise<void>;
   pause: () => void;
   resume: () => void;
   stop: () => void;
@@ -51,10 +67,19 @@ const SimulationContext = createContext<SimulationContextType | undefined>(undef
 
 export function SimulationProvider({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
+  const router = useRouter();
   const params = useParams();
+  const { isAuthenticated, loginAsDemoUser, logout } = useAuth();
+  const isDemo = React.useSyncExternalStore(
+    subscribeDemoMode,
+    isDemoMode,
+    () => false
+  );
 
   const workspaceSlug = params?.workspaceSlug as string | undefined;
   const projectSlug = params?.projectSlug as string | undefined;
+
+  const scenarios = isAuthenticated ? DASHBOARD_SCENARIOS : AUTH_SCENARIOS;
 
   const [activeScenario, setActiveScenario] = useState<SimulationScenario | null>(null);
   const [status, setStatus] = useState<SimulationStatus>("idle");
@@ -63,6 +88,14 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
   const [chaosConfig, setChaosConfig] = useState<ChaosConfig>(chaosController.getConfig());
   const [logs, setLogs] = useState<SimulationLog[]>(chaosController.getLogs());
   const [isFloatingOpen, setIsFloatingOpen] = useState(false);
+  const [highlightedTaskId, setHighlightedTaskId] = useState<string | null>(null);
+  const [spotlightMessage, setSpotlightMessage] = useState<string | null>(null);
+  const [storyBanner, setStoryBanner] = useState<StoryBanner | null>(null);
+
+  const setSpotlight = useCallback((taskId: string | null, message?: string | null) => {
+    setHighlightedTaskId(taskId);
+    setSpotlightMessage(message || null);
+  }, []);
 
   // Execution flow control refs
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -174,6 +207,9 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
     setStatus("idle");
     setCurrentStepIndex(0);
     resetChaos();
+    setHighlightedTaskId(null);
+    setSpotlightMessage(null);
+    setStoryBanner(null);
     addLog("info", "Simulation Stopped", "Scenario terminated and engine reset to idle.");
   }, [resetChaos, addLog]);
 
@@ -235,6 +271,9 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
             queryClient,
             workspaceSlug,
             projectSlug,
+            navigate: (url: string) => router.push(url),
+            setSpotlight,
+            setStoryBanner,
             log: addLog,
             sleep: (ms) => cancellableSleep(ms, controller.signal),
             setChaos: updateChaosConfig,
@@ -272,9 +311,10 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
         toast.error(`Simulation failed: ${errorMessage}`);
       } finally {
         resetChaos();
+        setSpotlight(null);
       }
     },
-    [queryClient, workspaceSlug, projectSlug, addLog, cancellableSleep, updateChaosConfig, resetChaos]
+    [queryClient, router, workspaceSlug, projectSlug, addLog, cancellableSleep, updateChaosConfig, resetChaos, setSpotlight]
   );
 
   const triggerChaosPreset = useCallback(
@@ -335,6 +375,32 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
     []
   );
 
+  const launchInstantDemo = useCallback(async () => {
+    try {
+      addLog("action", "Instant Demo Triggered", "Initializing sandbox session for Alex Rivera");
+      await loginAsDemoUser();
+      setDemoMode(true);
+      toast.success("Welcome! Demo engineering workspace loaded.");
+      router.push("/dashboard/devboard-engineering/projects/platform-core?view=kanban");
+    } catch {
+      toast.error("Failed to start demo session.");
+    }
+  }, [loginAsDemoUser, addLog, router]);
+
+  const exitDemo = useCallback(async () => {
+    try {
+      setDemoMode(false);
+      resetChaos();
+      setSpotlight(null);
+      setStoryBanner(null);
+      await logout();
+      toast.info("Exited demo sandbox.");
+      router.push("/sign-in");
+    } catch {
+      router.push("/sign-in");
+    }
+  }, [logout, resetChaos, setSpotlight, router]);
+
   const currentStep =
     activeScenario && currentStepIndex < activeScenario.steps.length
       ? activeScenario.steps[currentStepIndex]
@@ -343,7 +409,7 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
   return (
     <SimulationContext.Provider
       value={{
-        scenarios: AVAILABLE_SCENARIOS,
+        scenarios,
         activeScenario,
         status,
         currentStepIndex,
@@ -352,8 +418,17 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
         chaosConfig,
         logs,
         isFloatingOpen,
+        isAuthenticated,
+        isDemo,
+        highlightedTaskId,
+        spotlightMessage,
+        storyBanner,
+        setSpotlight,
+        setStoryBanner,
         setIsFloatingOpen,
         runScenario,
+        launchInstantDemo,
+        exitDemo,
         pause,
         resume,
         stop,

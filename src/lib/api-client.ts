@@ -1,4 +1,5 @@
 import { chaosController } from "@/features/simulation/chaos-controller";
+import { handleDemoRequest } from "@/features/simulation/mock-demo-data";
 
 export class ApiError extends Error {
   status: number;
@@ -195,6 +196,12 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
     }
 
     throw new ApiError(status, message, data);
+  }
+
+  // Instant Demo Mode Interceptor
+  const demoRes = handleDemoRequest<T>(endpoint, method, customConfig.body);
+  if (demoRes.handled) {
+    return demoRes.data as T;
   }
 
   const config: RequestInit = {

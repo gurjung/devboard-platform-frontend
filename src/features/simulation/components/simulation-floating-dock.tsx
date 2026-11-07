@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 
 export function SimulationFloatingDock() {
   const {
+    isDemo,
     scenarios,
     activeScenario,
     status,
@@ -32,6 +33,8 @@ export function SimulationFloatingDock() {
     playbackSpeed,
     chaosConfig,
     logs,
+    isAuthenticated,
+    launchInstantDemo,
     runScenario,
     pause,
     resume,
@@ -45,9 +48,16 @@ export function SimulationFloatingDock() {
 
   const [isExpanded, setIsExpanded] = useState(false);
   const [showLogs, setShowLogs] = useState(false);
-  const [selectedScenarioId, setSelectedScenarioId] = useState<string>(
-    scenarios[0]?.id || "happy-path-sprint"
-  );
+  const [selectedScenarioId, setSelectedScenarioId] = useState<string>("");
+
+  if (!isDemo) {
+    return null;
+  }
+
+  const effectiveScenarioId =
+    scenarios.some((s) => s.id === selectedScenarioId)
+      ? selectedScenarioId
+      : scenarios[0]?.id || "";
 
   const isRunning = status === "running";
   const isPaused = status === "paused";
@@ -90,14 +100,35 @@ export function SimulationFloatingDock() {
             </Button>
           </div>
 
+          {/* Unauthenticated Demo Sandbox Hero Banner */}
+          {!isAuthenticated && (
+            <div className="my-2.5 p-3 rounded-xl border border-primary/30 bg-primary/5 flex flex-col gap-2">
+              <div className="flex items-center gap-1.5 text-primary font-bold text-xs">
+                <Sparkles className="size-4 animate-spin" />
+                <span>Instant Demo Sandbox Access</span>
+              </div>
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                Bypass login and jump straight into an active DevBoard engineering workspace with pre-populated Kanban boards and project metrics.
+              </p>
+              <Button
+                size="sm"
+                onClick={launchInstantDemo}
+                className="w-full cursor-pointer gap-2 bg-primary text-primary-foreground font-bold text-xs shadow-xs"
+              >
+                <Sparkles className="size-3.5 fill-current" />
+                Enter Demo Workspace Now
+              </Button>
+            </div>
+          )}
+
           {/* Scenario Selector & Runner */}
-          <div className="py-3 flex flex-col gap-2.5">
+          <div className="py-2.5 flex flex-col gap-2.5">
             <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-              Select Scenario Playbook
+              {isAuthenticated ? "Select Workspace Playbook" : "Select Auth Screen Playbook"}
             </label>
             <div className="flex flex-col gap-2">
               <select
-                value={selectedScenarioId}
+                value={effectiveScenarioId}
                 onChange={(e) => setSelectedScenarioId(e.target.value)}
                 disabled={isRunning || isPaused}
                 className="w-full text-xs rounded-lg border border-input bg-card px-3 py-2 font-medium text-foreground shadow-xs focus:outline-hidden focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
@@ -115,7 +146,7 @@ export function SimulationFloatingDock() {
                   {!isRunning && !isPaused && (
                     <Button
                       size="sm"
-                      onClick={() => runScenario(selectedScenarioId)}
+                      onClick={() => runScenario(effectiveScenarioId)}
                       className="cursor-pointer gap-1.5 bg-primary text-primary-foreground text-xs font-semibold px-3.5 shadow-sm"
                     >
                       <Play className="size-3.5 fill-current" />

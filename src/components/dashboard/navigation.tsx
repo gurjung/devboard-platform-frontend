@@ -11,7 +11,6 @@ import {
   GoGear,
   GoPeople,
 } from "react-icons/go";
-import { FlaskConical } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NavigationProps {
@@ -53,14 +52,6 @@ export function Navigation({ onNavigate }: NavigationProps) {
         : "/dashboard/members",
       icon: GoPeople,
       activeIcon: GoPeople,
-    },
-    {
-      label: en.dashboard.navigation.simulation,
-      href: workspaceSlug
-        ? `/dashboard/${workspaceSlug}/simulation`
-        : "/dashboard/simulation",
-      icon: FlaskConical,
-      activeIcon: FlaskConical,
     },
   ];
 

@@ -14,6 +14,11 @@ import {
   refreshAuthToken,
   onAuthFailure,
 } from "@/lib/api-client";
+import {
+  DEMO_USER,
+  isDemoMode,
+  setDemoMode,
+} from "@/features/simulation/mock-demo-data";
 import type { User, AuthResponse } from "../types";
 import type { LoginInput, RegisterInput } from "../schema";
 
@@ -23,6 +28,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (credentials: LoginInput) => Promise<AuthResponse>;
   register: (data: RegisterInput) => Promise<AuthResponse>;
+  loginAsDemoUser: () => Promise<void>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
 }
@@ -35,6 +41,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refresh = useCallback(async () => {
     try {
+      if (isDemoMode()) {
+        setUser(DEMO_USER);
+        setIsLoading(false);
+        return;
+      }
+
       const existingToken = getAccessToken();
       if (existingToken) {
         try {
@@ -119,11 +131,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return response;
   };
 
+  const loginAsDemoUser = async () => {
+    setDemoMode(true);
+    setAccessToken("demo-mock-jwt-token");
+    setUser(DEMO_USER);
+  };
+
   const logout = async () => {
     try {
-      await apiClient.post("/auth/logout");
+      if (!isDemoMode()) {
+        await apiClient.post("/auth/logout");
+      }
     } catch {
     } finally {
+      setDemoMode(false);
       setAccessToken(null);
       setUser(null);
     }
@@ -137,6 +158,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading,
         login,
         register,
+        loginAsDemoUser,
         logout,
         refresh,
       }}

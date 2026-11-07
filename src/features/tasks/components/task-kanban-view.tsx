@@ -24,17 +24,17 @@ import {
   Calendar as CalendarIcon,
   AlertCircle,
   GripVertical,
-  CheckCircle2,
-  FolderOpen,
 } from "lucide-react";
 import { format, isPast, isToday } from "date-fns";
 import { cn } from "@/lib/utils";
-import type { Task, TaskPriority, TaskStatus } from "../types";
+import type { Task, TaskStatus } from "../types";
 import { TASK_STATUSES, TASK_STATUS_CONFIG } from "../constants";
 import { TaskPriorityBadge } from "./task-priority-badge";
 import { TaskAssigneeAvatar } from "./task-assignee-avatar";
 import { Button } from "@/components/ui/button";
 import { en } from "@/locales/en";
+import { useSimulation } from "@/features/simulation/context/simulation-context";
+import { KanbanSimulationRibbon } from "@/features/simulation/components/kanban-simulation-ribbon";
 
 interface TaskKanbanViewProps {
   tasks: Task[];
@@ -51,6 +51,10 @@ interface TaskCardProps {
 }
 
 function TaskCard({ task, onClick, isOverlay = false }: TaskCardProps) {
+  const { isDemo, highlightedTaskId, spotlightMessage } = useSimulation();
+  const isHighlighted = isDemo && task.id === highlightedTaskId;
+  const cardRef = React.useRef<HTMLDivElement | null>(null);
+
   const {
     attributes,
     listeners,
@@ -63,6 +67,20 @@ function TaskCard({ task, onClick, isOverlay = false }: TaskCardProps) {
     data: { task },
     disabled: isOverlay,
   });
+
+  const setCombinedRef = React.useCallback(
+    (node: HTMLDivElement | null) => {
+      setNodeRef(node);
+      cardRef.current = node;
+    },
+    [setNodeRef]
+  );
+
+  React.useEffect(() => {
+    if (isHighlighted && cardRef.current) {
+      cardRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }, [isHighlighted]);
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -81,16 +99,35 @@ function TaskCard({ task, onClick, isOverlay = false }: TaskCardProps) {
 
   return (
     <div
-      ref={setNodeRef}
+      ref={setCombinedRef}
       style={style}
       className={cn(
-        "group relative rounded-xl border border-border/70 bg-card p-3 shadow-2xs hover:border-border transition-all duration-150 cursor-pointer select-none",
+        "group relative rounded-xl border border-border/70 bg-card p-3 shadow-2xs hover:border-border transition-all duration-300 cursor-pointer select-none",
         isDragging && "opacity-30 border-dashed border-primary",
         isOverlay && "rotate-2 scale-105 shadow-xl border-primary ring-2 ring-primary/20 cursor-grabbing bg-card z-50",
-        task.status === "DONE" && "opacity-75"
+        task.status === "DONE" && "opacity-75",
+        isHighlighted &&
+          "ring-4 ring-primary ring-offset-2 ring-offset-background border-primary shadow-xl scale-[1.02] bg-primary/10 z-30 animate-pulse"
       )}
       onClick={() => onClick(task)}
     >
+      {/* Simulation Guided Spotlight Banner */}
+      {isHighlighted && spotlightMessage && (
+        <div
+          role="status"
+          className="mb-2.5 -mx-1 -mt-1 rounded-lg bg-primary px-2.5 py-1 text-[11px] font-bold text-primary-foreground shadow-sm flex items-center justify-between gap-1.5 animate-pulse"
+        >
+          <span className="flex items-center gap-1.5">
+            <span className="relative flex size-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+              <span className="relative inline-flex rounded-full size-2 bg-white"></span>
+            </span>
+            <span>{spotlightMessage}</span>
+          </span>
+          <span className="text-[9px] uppercase tracking-wider opacity-85 font-mono">LIVE DEMO</span>
+        </div>
+      )}
+
       {/* Drag handle & Priority header */}
       <div className="flex items-center justify-between gap-2 mb-2">
         <TaskPriorityBadge priority={task.priority} size="sm" />
@@ -318,29 +355,33 @@ export function TaskKanbanView({
   };
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCorners}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-    >
-      <div className="flex gap-3 overflow-x-auto pb-4 pt-1">
-        {TASK_STATUSES.map((status) => (
-          <KanbanColumn
-            key={status}
-            status={status}
-            tasks={tasksByStatus[status]}
-            onTaskClick={onTaskClick}
-            onAddTask={onOpenCreateWithStatus}
-          />
-        ))}
-      </div>
+    <div className="flex flex-col flex-1 min-w-0">
+      <KanbanSimulationRibbon />
 
-      <DragOverlay dropAnimation={{ duration: 150, easing: "ease" }}>
-        {activeTask ? (
-          <TaskCard task={activeTask} onClick={() => {}} isOverlay />
-        ) : null}
-      </DragOverlay>
-    </DndContext>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCorners}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
+        <div className="flex gap-3 overflow-x-auto pb-4 pt-1">
+          {TASK_STATUSES.map((status) => (
+            <KanbanColumn
+              key={status}
+              status={status}
+              tasks={tasksByStatus[status]}
+              onTaskClick={onTaskClick}
+              onAddTask={onOpenCreateWithStatus}
+            />
+          ))}
+        </div>
+
+        <DragOverlay dropAnimation={{ duration: 150, easing: "ease" }}>
+          {activeTask ? (
+            <TaskCard task={activeTask} onClick={() => {}} isOverlay />
+          ) : null}
+        </DragOverlay>
+      </DndContext>
+    </div>
   );
 }

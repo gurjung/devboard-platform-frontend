@@ -25,8 +25,11 @@ import {
 import { useLogin } from "@/features/auth/hooks/use-login";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
+import { Sparkles } from "lucide-react";
+import { useAuth } from "@/features/auth/context/auth-context";
 
 export const SignInCard = () => {
+  const { loginAsDemoUser } = useAuth();
   const loginMutation = useLogin();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -55,6 +58,16 @@ export const SignInCard = () => {
         toast.error(error.message || en.auth.signIn.toastErrorFallback);
       },
     });
+  };
+
+  const handleDemoAccess = async () => {
+    try {
+      await loginAsDemoUser();
+      toast.success("Demo Mode Active: Welcome to DevBoard Engineering Workspace!");
+      router.push("/dashboard/devboard-engineering/projects/platform-core?view=kanban");
+    } catch {
+      toast.error("Failed to initialize demo session.");
+    }
   };
 
   return (
@@ -121,6 +134,23 @@ export const SignInCard = () => {
               {loginMutation.isPending
                 ? en.auth.signIn.submitButtonLoading
                 : en.auth.signIn.submitButton}
+            </Button>
+
+            <div className="relative my-1 flex items-center justify-center">
+              <span className="bg-card px-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                or
+              </span>
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              onClick={handleDemoAccess}
+              className="w-full cursor-pointer gap-2 border-primary/30 bg-primary/5 text-primary hover:bg-primary/10 font-semibold"
+            >
+              <Sparkles className="size-4" />
+              Instant Demo Sandbox Access
             </Button>
           </FieldGroup>
         </form>

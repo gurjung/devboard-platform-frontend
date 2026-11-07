@@ -26,12 +26,23 @@ export interface ChaosConfig {
   rateLimitRetryAfterSec?: number;
 }
 
+export interface StoryBanner {
+  title: string;
+  explanation: string;
+  type: "info" | "warning" | "success" | "error";
+  whatHappened?: string;
+  resilienceDetail?: string;
+}
+
 export interface SimulationStepContext {
   queryClient: QueryClient;
   workspaceId?: string;
   workspaceSlug?: string;
   projectId?: string;
   projectSlug?: string;
+  navigate?: (url: string) => void;
+  setSpotlight: (taskId: string | null, message?: string | null) => void;
+  setStoryBanner: (banner: StoryBanner | null) => void;
   log: (
     level: LogLevel,
     title: string,
