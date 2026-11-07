@@ -30,7 +30,7 @@ export function NetworkStatusBanner() {
         "sticky top-0 z-40 flex items-center justify-between px-4 py-2 text-xs font-medium transition-all duration-300 shadow-xs",
         !isOnline
           ? "bg-destructive text-destructive-foreground"
-          : "bg-emerald-600 text-white",
+          : "bg-emerald-600 text-white"
       )}
     >
       <div className="flex items-center gap-2 mx-auto sm:mx-0">
@@ -38,20 +38,15 @@ export function NetworkStatusBanner() {
           <>
             <WifiOff className="size-4 animate-pulse" />
             <span>
-              <strong>
-                {isSimulatedOffline
-                  ? "Simulated Offline Mode"
-                  : "No Internet Connection"}
-              </strong>
-              : Mutations are paused. Reconnecting automatically when available.
+              <strong>{isSimulatedOffline ? "Simulated Offline Mode" : "No Internet Connection"}</strong>:
+              {" "}Mutations are paused. Reconnecting automatically when available.
             </span>
           </>
         ) : (
           <>
             <Wifi className="size-4" />
             <span>
-              <strong>Back Online</strong>: Connection restored. Queries and
-              mutations are resyncing.
+              <strong>Back Online</strong>: Connection restored. Queries and mutations are resyncing.
             </span>
           </>
         )}

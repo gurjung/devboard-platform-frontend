@@ -75,6 +75,7 @@ export const en = {
       myTasks: "My Tasks",
       settings: "Settings",
       members: "Members",
+      simulation: "Simulation Lab",
     },
   },
 

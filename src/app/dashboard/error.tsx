@@ -2,13 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  AlertTriangle,
-  RotateCcw,
-  Home,
-  ChevronDown,
-  ChevronUp,
-} from "lucide-react";
+import { AlertTriangle, RotateCcw, Home, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface DashboardErrorProps {
@@ -70,30 +64,17 @@ export default function DashboardError({ error, reset }: DashboardErrorProps) {
           onClick={() => setShowDetails(!showDetails)}
           className="mx-auto flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer"
         >
-          <span>
-            {showDetails
-              ? "Hide technical diagnostic"
-              : "View technical diagnostic"}
-          </span>
-          {showDetails ? (
-            <ChevronUp className="size-3.5" />
-          ) : (
-            <ChevronDown className="size-3.5" />
-          )}
+          <span>{showDetails ? "Hide technical diagnostic" : "View technical diagnostic"}</span>
+          {showDetails ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
         </button>
 
         {showDetails && (
           <div className="mt-3 rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-xs font-mono text-destructive">
             <p className="font-bold mb-1">Error Message:</p>
-            <p className="break-all">
-              {error.message || "Unknown client runtime exception"}
-            </p>
+            <p className="break-all">{error.message || "Unknown client runtime exception"}</p>
             {error.digest && (
               <p className="mt-2 text-[11px] text-muted-foreground">
-                Digest Code:{" "}
-                <span className="font-semibold text-foreground">
-                  {error.digest}
-                </span>
+                Digest Code: <span className="font-semibold text-foreground">{error.digest}</span>
               </p>
             )}
           </div>

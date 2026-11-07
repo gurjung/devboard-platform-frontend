@@ -13,9 +13,7 @@ export interface NetworkStatus {
 export function useNetworkStatus(): NetworkStatus {
   const [isOnline, setIsOnline] = useState<boolean>(() => {
     const initialChaos = chaosController.getConfig().forceOffline;
-    return typeof navigator !== "undefined"
-      ? navigator.onLine && !initialChaos
-      : true;
+    return typeof navigator !== "undefined" ? navigator.onLine && !initialChaos : true;
   });
   const [showRestored, setShowRestored] = useState<boolean>(false);
   const [isSimulatedOffline, setIsSimulatedOffline] = useState<boolean>(() => {

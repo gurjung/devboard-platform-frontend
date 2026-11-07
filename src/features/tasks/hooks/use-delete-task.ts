@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  useMutation,
-  useQueryClient,
-  type InfiniteData,
-} from "@tanstack/react-query";
+import { useMutation, useQueryClient, type InfiniteData } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/api-client";
 import { en } from "@/locales/en";
@@ -20,7 +16,7 @@ export function useDeleteTask(workspaceId?: string, projectId?: string) {
       }
 
       await apiClient.delete<unknown>(
-        `/workspaces/${workspaceId}/projects/${projectId}/tasks/${taskId}`,
+        `/workspaces/${workspaceId}/projects/${projectId}/tasks/${taskId}`
       );
       return taskId;
     },
@@ -31,9 +27,7 @@ export function useDeleteTask(workspaceId?: string, projectId?: string) {
       });
 
       // 2. Snapshot previous queries data
-      const previousQueries = queryClient.getQueriesData<
-        InfiniteData<TasksResponse>
-      >({
+      const previousQueries = queryClient.getQueriesData<InfiniteData<TasksResponse>>({
         queryKey: ["tasks", workspaceId, projectId],
       });
 
@@ -51,7 +45,7 @@ export function useDeleteTask(workspaceId?: string, projectId?: string) {
               totalCount: Math.max(0, (page.totalCount || 1) - 1),
             })),
           };
-        },
+        }
       );
 
       return { previousQueries };
