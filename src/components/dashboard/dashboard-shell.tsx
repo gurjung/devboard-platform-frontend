@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Sidebar } from "./sidebar";
 import { Navbar } from "./navbar";
-import { useWorkspaces } from "@/features/workspace/hooks/use-workspaces";
+import { NetworkStatusBanner } from "@/components/shared/network-status-banner";
 
 interface User {
   name?: string | null;
@@ -23,6 +23,7 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
     <div className="flex min-h-screen bg-background">
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="flex flex-1 flex-col min-w-0">
+        <NetworkStatusBanner />
         <Navbar
           user={user}
           onOpenSidebar={() => setSidebarOpen((prev) => !prev)}
