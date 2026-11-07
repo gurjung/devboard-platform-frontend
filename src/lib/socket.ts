@@ -1,6 +1,7 @@
 import { io, Socket } from "socket.io-client";
 import { getAccessToken, refreshAuthToken } from "./api-client";
 import type { Task } from "@/features/tasks/types";
+import type { Notification } from "@/features/notifications/types";
 
 export interface PresenceUser {
   userId: string;
@@ -17,6 +18,9 @@ export interface ServerToClientEvents {
     task: Task;
     assignedBy: { userId: string; email: string };
   }) => void;
+
+  // Jira-Style Notifications
+  "notification:new": (data: { notification: Notification }) => void;
 
   // Presence
   "project:presence": (data: { projectId: string; users: PresenceUser[] }) => void;

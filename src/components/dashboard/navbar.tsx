@@ -5,6 +5,7 @@ import { HiBars3 } from "react-icons/hi2";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { UserButton } from "./user-button";
+import { NotificationBell } from "@/features/notifications/components/notification-bell";
 import { useSimulation } from "@/features/simulation/context/simulation-context";
 
 interface User {
@@ -62,7 +63,8 @@ export function Navbar({
         )}
       </div>
 
-      <div className="ml-auto flex items-center gap-3">
+      <div className="ml-auto flex items-center gap-2.5">
+        <NotificationBell />
         <ThemeToggle />
         <UserButton user={user} />
       </div>
