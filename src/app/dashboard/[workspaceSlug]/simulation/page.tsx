@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useParams } from "next/navigation";
 import {
   FlaskConical,
   Play,
@@ -19,16 +20,40 @@ import {
   Circle,
   ArrowRight,
   Trash2,
+  Database,
+  Sparkles,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { useSimulation, type SimulationScenario, type LogLevel } from "@/features/simulation";
+import {
+  useSimulation,
+  useSimulationSandbox,
+  type SimulationScenario,
+  type LogLevel,
+} from "@/features/simulation";
+import { useWorkspaces } from "@/features/workspace/hooks/use-workspaces";
 import { useNetworkStatus } from "@/hooks/use-network-status";
 import { cn } from "@/lib/utils";
 
 export default function SimulationStudioPage() {
+  const params = useParams();
+  const workspaceSlug = params?.workspaceSlug as string | undefined;
+  const { data: workspaces } = useWorkspaces();
+  const currentWorkspace = workspaces?.find(
+    (w) => w.slug === workspaceSlug || w.id === workspaceSlug
+  );
+
+  const {
+    isSeeding,
+    isTearingDown,
+    lastSeedResult,
+    seedSandbox,
+    teardownSandbox,
+  } = useSimulationSandbox(currentWorkspace?.id);
+
   const {
     scenarios,
     activeScenario,
@@ -468,6 +493,55 @@ export default function SimulationStudioPage() {
                     </Button>
                   ))}
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Sandbox Mock Data Controller */}
+          <Card className="border-border/80 shadow-xs">
+            <CardHeader className="pb-3 border-b border-border/50">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="p-1 rounded-lg bg-emerald-500/10 text-emerald-500">
+                    <Database className="size-4" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base font-bold">Sandbox Data Generator</CardTitle>
+                    <CardDescription className="text-xs">
+                      Seed or purge realistic demo tasks and metrics for test workflows.
+                    </CardDescription>
+                  </div>
+                </div>
+
+                {lastSeedResult && (
+                  <Badge variant="outline" className="text-[10px] font-mono text-emerald-600">
+                    Active: {lastSeedResult.tasksCount} tasks
+                  </Badge>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="pt-4 flex flex-col gap-3 text-xs">
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  onClick={seedSandbox}
+                  disabled={isSeeding || isTearingDown}
+                  className="cursor-pointer gap-1.5 flex-1 text-xs font-semibold"
+                >
+                  {isSeeding ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />}
+                  {isSeeding ? "Generating..." : "Seed 15 Demo Tasks"}
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={teardownSandbox}
+                  disabled={isSeeding || isTearingDown}
+                  className="cursor-pointer gap-1.5 text-xs text-muted-foreground hover:text-destructive"
+                >
+                  {isTearingDown ? <Loader2 className="size-3.5 animate-spin" /> : <Trash2 className="size-3.5" />}
+                  Purge Data
+                </Button>
               </div>
             </CardContent>
           </Card>

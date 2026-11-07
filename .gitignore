@@ -43,7 +43,8 @@ next-env.d.ts
 FRONTEND_REFERENCE.md
 FEATURE_ROADMAP.md
 PROJECT_CONTEXT.md
-docs
+docs/*
+!docs/simulation-backend-blueprint.md
 AGENTS.md
 CLAUDE.md
 scripts
