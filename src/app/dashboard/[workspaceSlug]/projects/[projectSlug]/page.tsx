@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useWorkspaces } from "@/features/workspace/hooks/use-workspaces";
 import { useProject } from "@/features/projects/hooks/use-project";
+import { useProjectRoom } from "@/features/projects/hooks/use-project-room";
 import { useAuth } from "@/features/auth/context/auth-context";
 import { ProjectAvatar } from "@/features/projects/components/project-avatar";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,7 @@ import {
   useTasks,
   useUpdateTask,
   useDeleteTask,
+  useTaskRealtimeSync,
   ViewSelector,
   TaskFilterBar,
   TaskTableView,
@@ -105,6 +107,13 @@ export default function ProjectHomePage({ params }: ProjectPageProps) {
     projectId: project?.id,
     filters,
   });
+
+  // Real-time synchronization & active room presence
+  useTaskRealtimeSync({
+    workspaceId: currentWorkspace?.id,
+    projectId: project?.id,
+  });
+  const { onlineUsers, isConnected: isWsConnected } = useProjectRoom(project?.id);
 
   const updateTaskMutation = useUpdateTask(currentWorkspace?.id, project?.id);
   const deleteTaskMutation = useDeleteTask(currentWorkspace?.id, project?.id);
@@ -229,6 +238,21 @@ export default function ProjectHomePage({ params }: ProjectPageProps) {
           </div>
 
           <div className="flex items-center gap-2.5 self-start sm:self-auto">
+            {/* Live Presence / WebSocket Status */}
+            {isWsConnected && (
+              <div
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-medium"
+                title={`${onlineUsers.length} collaborator${onlineUsers.length === 1 ? "" : "s"} currently online`}
+              >
+                <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="hidden sm:inline">
+                  {onlineUsers.length > 0
+                    ? `${onlineUsers.length} online`
+                    : "Live"}
+                </span>
+              </div>
+            )}
+
             {/* View Selector Tabs */}
             <ViewSelector
               currentView={currentView}

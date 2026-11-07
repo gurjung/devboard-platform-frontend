@@ -8,6 +8,7 @@ export * from "./hooks/use-my-tasks";
 export * from "./hooks/use-create-task";
 export * from "./hooks/use-update-task";
 export * from "./hooks/use-delete-task";
+export * from "./hooks/use-task-realtime-sync";
 
 export * from "./components/task-status-badge";
 export * from "./components/task-priority-badge";

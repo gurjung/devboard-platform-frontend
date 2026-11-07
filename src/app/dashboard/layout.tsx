@@ -3,6 +3,7 @@
 import { AuthGuard } from "@/features/auth/components/auth-guard";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { useAuth } from "@/features/auth/context/auth-context";
+import { SocketProvider } from "@/components/providers/socket-provider";
 
 export default function DashboardLayout({
   children,
@@ -11,7 +12,9 @@ export default function DashboardLayout({
 }) {
   return (
     <AuthGuard>
-      <DashboardLayoutContent>{children}</DashboardLayoutContent>
+      <SocketProvider>
+        <DashboardLayoutContent>{children}</DashboardLayoutContent>
+      </SocketProvider>
     </AuthGuard>
   );
 }
