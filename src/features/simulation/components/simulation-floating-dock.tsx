@@ -6,6 +6,7 @@ import {
   Pause,
   Square,
   FastForward,
+  Rewind,
   Flame,
   WifiOff,
   RotateCcw,
@@ -16,6 +17,7 @@ import {
   ShieldCheck,
   Clock,
   Sparkles,
+  Layers,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +32,7 @@ export function SimulationFloatingDock() {
     status,
     currentStepIndex,
     currentStep,
+    storyBanner,
     playbackSpeed,
     chaosConfig,
     logs,
@@ -40,6 +43,8 @@ export function SimulationFloatingDock() {
     resume,
     stop,
     stepForward,
+    stepBackward,
+    jumpToStep,
     setPlaybackSpeed,
     triggerChaosPreset,
     resetChaos,
@@ -50,9 +55,22 @@ export function SimulationFloatingDock() {
   const [showLogs, setShowLogs] = useState(false);
   const [selectedScenarioId, setSelectedScenarioId] = useState<string>("");
 
-  if (!isDemo) {
-    return null;
-  }
+  const chapters = React.useMemo(() => {
+    if (!activeScenario) return [];
+    const chs: { label: string; stepIndex: number }[] = [];
+    activeScenario.steps.forEach((step, idx) => {
+      if (step.chapter && (!chs.length || chs[chs.length - 1].label !== step.chapter)) {
+        chs.push({ label: step.chapter, stepIndex: idx });
+      }
+    });
+    return chs;
+  }, [activeScenario]);
+
+  const effectiveHighlights =
+    storyBanner?.highlights ||
+    currentStep?.highlights ||
+    storyBanner?.talkingPoints ||
+    currentStep?.talkingPoints;
 
   const effectiveScenarioId =
     scenarios.some((s) => s.id === selectedScenarioId)
@@ -66,6 +84,10 @@ export function SimulationFloatingDock() {
     chaosConfig.nextErrorStatus !== null ||
     chaosConfig.forceOffline ||
     chaosConfig.latencyMs > 0;
+
+  if (!isDemo) {
+    return null;
+  }
 
   return (
     <aside
@@ -182,8 +204,18 @@ export function SimulationFloatingDock() {
                       <Button
                         size="sm"
                         variant="ghost"
+                        onClick={stepBackward}
+                        disabled={currentStepIndex === 0}
+                        title="Previous Step"
+                        className="cursor-pointer size-8 p-0"
+                      >
+                        <Rewind className="size-4 text-muted-foreground" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
                         onClick={stepForward}
-                        title="Step Forward"
+                        title="Skip to Next Step"
                         className="cursor-pointer size-8 p-0"
                       >
                         <FastForward className="size-4 text-muted-foreground" />
@@ -224,22 +256,72 @@ export function SimulationFloatingDock() {
 
             {/* Active Step Progress */}
             {activeScenario && (isRunning || isPaused) && (
-              <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs">
-                <div className="flex items-center justify-between font-semibold text-primary mb-1">
-                  <span className="flex items-center gap-1.5">
-                    <Activity className="size-3.5 animate-pulse" />
-                    Step {currentStepIndex + 1} of {activeScenario.steps.length}
+              <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs flex flex-col gap-2">
+                <div className="flex items-center justify-between font-semibold text-primary">
+                  <span className="flex items-center gap-1.5 truncate max-w-[280px]">
+                    <Activity className="size-3.5 animate-pulse shrink-0" />
+                    <span>
+                      {storyBanner?.chapter || currentStep?.chapter ? `${storyBanner?.chapter || currentStep?.chapter} • ` : ""}Step {currentStepIndex + 1} of {activeScenario.steps.length}
+                    </span>
                   </span>
-                  <span className="text-[11px] uppercase tracking-wider font-mono">
-                    {status.toUpperCase()}
-                  </span>
+                  <Badge variant={isPaused ? "secondary" : "default"} className="text-[10px] uppercase font-mono px-1.5 py-0">
+                    {status}
+                  </Badge>
                 </div>
-                <p className="font-medium text-foreground text-[12px]">
-                  {currentStep?.title || "Processing..."}
-                </p>
-                <p className="text-[11px] text-muted-foreground mt-0.5">
-                  {currentStep?.description}
-                </p>
+
+                <div>
+                  <h5 className="font-bold text-foreground text-[12px] leading-snug">
+                    {storyBanner?.title || currentStep?.title || "Processing..."}
+                  </h5>
+                  <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
+                    {storyBanner?.explanation || currentStep?.description}
+                  </p>
+                </div>
+
+                {/* Feature Highlights */}
+                {effectiveHighlights && effectiveHighlights.length > 0 && (
+                  <div className="p-2 rounded-lg bg-background/80 border border-primary/20 text-[11px]">
+                    <div className="font-bold text-primary mb-1 flex items-center gap-1.5">
+                      <Sparkles className="size-3 text-primary" />
+                      <span>Feature Highlights:</span>
+                    </div>
+                    <ul className="list-disc list-inside space-y-1 text-foreground/90 font-medium leading-relaxed">
+                      {effectiveHighlights.map((point: string, idx: number) => (
+                        <li key={idx}>{point}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Resilience Detail */}
+                {storyBanner?.resilienceDetail && (
+                  <div className="flex items-start gap-1.5 p-2 rounded-lg bg-muted/40 border border-border/40 text-[10px] text-muted-foreground">
+                    <ShieldCheck className="size-3.5 text-primary shrink-0 mt-0.5" />
+                    <p className="leading-snug">{storyBanner.resilienceDetail}</p>
+                  </div>
+                )}
+
+                {/* Quick Chapter Jump */}
+                {chapters.length > 1 && (
+                  <div className="flex items-center gap-1.5 pt-1.5 border-t border-border/40">
+                    <Layers className="size-3 text-muted-foreground shrink-0" />
+                    <span className="text-[10px] font-semibold text-muted-foreground shrink-0">Chapter:</span>
+                    <select
+                      aria-label="Jump to Chapter"
+                      value={
+                        chapters.slice().reverse().find((c) => currentStepIndex >= c.stepIndex)?.stepIndex ?? 0
+                      }
+                      onChange={(e) => jumpToStep(Number(e.target.value))}
+                      className="text-[10px] font-semibold rounded-md border border-input bg-card px-2 py-0.5 text-foreground shadow-xs cursor-pointer focus:outline-hidden focus:ring-1 focus:ring-primary flex-1 truncate"
+                    >
+                      {chapters.map((ch) => (
+                        <option key={ch.stepIndex} value={ch.stepIndex}>
+                          {ch.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -373,7 +455,9 @@ export function SimulationFloatingDock() {
         className={cn(
           "flex items-center gap-2.5 rounded-full px-4 py-2.5 shadow-xl transition-all duration-200 cursor-pointer border backdrop-blur-md",
           isRunning
-            ? "bg-primary text-primary-foreground border-primary animate-pulse"
+            ? "bg-primary text-primary-foreground border-primary shadow-primary/20"
+            : isPaused
+            ? "bg-amber-600 text-white border-amber-500 shadow-amber-500/20"
             : isChaosActive
             ? "bg-destructive text-destructive-foreground border-destructive"
             : "bg-background/95 text-foreground border-border hover:border-primary/50 hover:bg-card"
@@ -383,7 +467,9 @@ export function SimulationFloatingDock() {
           className={cn(
             "size-2 rounded-full",
             isRunning
-              ? "bg-background animate-ping"
+              ? "bg-primary-foreground animate-ping"
+              : isPaused
+              ? "bg-white"
               : isChaosActive
               ? "bg-yellow-300 animate-pulse"
               : "bg-emerald-500"
@@ -391,7 +477,9 @@ export function SimulationFloatingDock() {
         />
         <span className="text-xs font-bold tracking-tight">
           {isRunning
-            ? `Simulating (${currentStepIndex + 1}/${activeScenario?.steps.length || 0})`
+            ? `Tour: Step ${currentStepIndex + 1}/${activeScenario?.steps.length || 0}`
+            : isPaused
+            ? `Tour Paused (${currentStepIndex + 1}/${activeScenario?.steps.length || 0})`
             : isChaosActive
             ? "Chaos Mode Armed"
             : "Simulation Studio"}

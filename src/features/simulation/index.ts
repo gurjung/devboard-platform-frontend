@@ -3,4 +3,5 @@ export * from "./chaos-controller";
 export * from "./context/simulation-context";
 export * from "./components/simulation-floating-dock";
 export * from "./components/kanban-simulation-ribbon";
+export * from "./components/tour-spotlight-wrapper";
 export * from "./scenarios";

@@ -1,4 +1,5 @@
 import type { SimulationScenario } from "../types";
+import { hiringManagerShowcaseScenario } from "./hiring-manager-showcase";
 import { happyPathSprintScenario } from "./happy-path-sprint";
 import { faultOptimisticRollbackScenario } from "./fault-optimistic-rollback";
 import { faultTokenExpiryScenario } from "./fault-token-expiry";
@@ -17,6 +18,7 @@ export const AUTH_SCENARIOS: SimulationScenario[] = [
 ];
 
 export const DASHBOARD_SCENARIOS: SimulationScenario[] = [
+  hiringManagerShowcaseScenario,
   happyPathSprintScenario,
   faultOptimisticRollbackScenario,
   faultTokenExpiryScenario,
@@ -29,7 +31,11 @@ export const AVAILABLE_SCENARIOS: SimulationScenario[] = [
   ...DASHBOARD_SCENARIOS,
 ];
 
+const interactiveProductTourScenario = hiringManagerShowcaseScenario;
+
 export {
+  hiringManagerShowcaseScenario,
+  interactiveProductTourScenario,
   authInstantDemoScenario,
   authFault500CrashScenario,
   authFault429RateLimitScenario,

@@ -42,6 +42,7 @@ interface SimulationContextType {
   isAuthenticated: boolean;
   isDemo: boolean;
   highlightedTaskId: string | null;
+  highlightedElementId: string | null;
   spotlightMessage: string | null;
   storyBanner: StoryBanner | null;
   setSpotlight: (taskId: string | null, message?: string | null) => void;
@@ -54,6 +55,8 @@ interface SimulationContextType {
   resume: () => void;
   stop: () => void;
   stepForward: () => void;
+  stepBackward: () => void;
+  jumpToStep: (stepIndex: number) => void;
   setPlaybackSpeed: (speed: 1 | 2 | 5) => void;
   updateChaosConfig: (partial: Partial<ChaosConfig>) => void;
   resetChaos: () => void;
@@ -102,6 +105,7 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
   const isPausedRef = useRef(false);
   const stepAdvanceTriggerRef = useRef<(() => void) | null>(null);
   const speedRef = useRef<1 | 2 | 5>(1);
+  const jumpTargetRef = useRef<number | null>(null);
 
   // Sync state with ChaosController
   useEffect(() => {
@@ -213,6 +217,26 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
     addLog("info", "Simulation Stopped", "Scenario terminated and engine reset to idle.");
   }, [resetChaos, addLog]);
 
+  const jumpToStep = useCallback(
+    (targetIndex: number) => {
+      if (!activeScenario) return;
+      const clamped = Math.max(0, Math.min(targetIndex, activeScenario.steps.length - 1));
+      jumpTargetRef.current = clamped;
+      if (isPausedRef.current) {
+        isPausedRef.current = false;
+        setStatus("running");
+      }
+      if (stepAdvanceTriggerRef.current) {
+        stepAdvanceTriggerRef.current();
+      }
+    },
+    [activeScenario]
+  );
+
+  const stepBackward = useCallback(() => {
+    jumpToStep(currentStepIndex - 1);
+  }, [currentStepIndex, jumpToStep]);
+
   const stepForward = useCallback(() => {
     if (stepAdvanceTriggerRef.current) {
       stepAdvanceTriggerRef.current();
@@ -235,6 +259,7 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
       const controller = new AbortController();
       abortControllerRef.current = controller;
       isPausedRef.current = false;
+      jumpTargetRef.current = null;
 
       setActiveScenario(targetScenario);
       setStatus("running");
@@ -248,7 +273,8 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
       );
 
       try {
-        for (let i = 0; i < targetScenario.steps.length; i++) {
+        let i = 0;
+        while (i < targetScenario.steps.length) {
           if (controller.signal.aborted) break;
 
           while (isPausedRef.current) {
@@ -283,6 +309,13 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
           // Wait step transition delay
           if (step.delayMs && !controller.signal.aborted) {
             await cancellableSleep(step.delayMs, controller.signal);
+          }
+
+          if (jumpTargetRef.current !== null) {
+            i = jumpTargetRef.current;
+            jumpTargetRef.current = null;
+          } else {
+            i++;
           }
         }
 
@@ -421,6 +454,7 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
         isAuthenticated,
         isDemo,
         highlightedTaskId,
+        highlightedElementId: highlightedTaskId,
         spotlightMessage,
         storyBanner,
         setSpotlight,
@@ -433,6 +467,8 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
         resume,
         stop,
         stepForward,
+        stepBackward,
+        jumpToStep,
         setPlaybackSpeed,
         updateChaosConfig,
         resetChaos,

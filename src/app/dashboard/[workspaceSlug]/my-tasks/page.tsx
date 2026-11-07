@@ -41,6 +41,7 @@ import {
 import type { WorkspaceRole } from "@/features/workspace/types";
 import { en } from "@/locales/en";
 import { cn } from "@/lib/utils";
+import { TourSpotlightWrapper } from "@/features/simulation/components/tour-spotlight-wrapper";
 
 interface MyTasksPageProps {
   params: Promise<{
@@ -359,19 +360,21 @@ export default function MyTasksPage({ params }: MyTasksPageProps) {
 
       {/* Main Table */}
       <div className="mt-1">
-        <MyTasksTable
-          workspaceSlug={workspaceSlug}
-          tasks={tasks}
-          isLoading={isTasksLoading}
-          hasNextPage={hasNextPage}
-          isFetchingNextPage={isFetchingNextPage}
-          onFetchNextPage={fetchNextPage}
-          onTaskClick={handleTaskClick}
-          onStatusChange={handleStatusChange}
-          onPriorityChange={handlePriorityChange}
-          onDeleteClick={handleDeleteTask}
-          hasActiveFilters={hasActiveFilters}
-        />
+        <TourSpotlightWrapper id="my-tasks-table">
+          <MyTasksTable
+            workspaceSlug={workspaceSlug}
+            tasks={tasks}
+            isLoading={isTasksLoading}
+            hasNextPage={hasNextPage}
+            isFetchingNextPage={isFetchingNextPage}
+            onFetchNextPage={fetchNextPage}
+            onTaskClick={handleTaskClick}
+            onStatusChange={handleStatusChange}
+            onPriorityChange={handlePriorityChange}
+            onDeleteClick={handleDeleteTask}
+            hasActiveFilters={hasActiveFilters}
+          />
+        </TourSpotlightWrapper>
       </div>
 
       {/* Edit Dialog */}

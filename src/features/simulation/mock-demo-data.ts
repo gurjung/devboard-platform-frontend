@@ -172,6 +172,7 @@ const INITIAL_DEMO_TASKS: Task[] = [
 ];
 
 let demoTasks: Task[] = [...INITIAL_DEMO_TASKS];
+let demoProjects: Project[] = [...DEMO_PROJECTS];
 let isDemoActive = false;
 const demoListeners = new Set<() => void>();
 
@@ -207,6 +208,7 @@ export const setDemoMode = (enabled: boolean): void => {
       } else {
         localStorage.removeItem(DEMO_STORAGE_KEY);
         demoTasks = [...INITIAL_DEMO_TASKS];
+        demoProjects = [...DEMO_PROJECTS];
       }
     } catch {}
   }
@@ -262,6 +264,52 @@ export const deleteDemoTask = (id: string): boolean => {
   return demoTasks.length < beforeCount;
 };
 
+export const getDemoProjects = (): Project[] => [...demoProjects];
+
+export const addDemoProject = (newProject: Partial<Project>): Project => {
+  const id = newProject.id || `proj-demo-${Date.now()}`;
+  const slug =
+    newProject.slug ||
+    newProject.name?.toLowerCase().replace(/[^a-z0-9]+/g, "-") ||
+    `project-${Date.now()}`;
+  const existingIdx = demoProjects.findIndex((p) => p.id === id || p.slug === slug);
+  const created: Project = {
+    id,
+    name: newProject.name || "Microservices Gateway",
+    slug,
+    workspaceId: "ws-demo-corp",
+    createdById: "demo-user-1",
+    logo: newProject.logo || null,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+  if (existingIdx !== -1) {
+    demoProjects[existingIdx] = created;
+  } else {
+    demoProjects.push(created);
+  }
+  return created;
+};
+
+export const updateDemoProject = (idOrSlug: string, updates: Partial<Project>): Project | null => {
+  const idx = demoProjects.findIndex((p) => p.id === idOrSlug || p.slug === idOrSlug);
+  if (idx !== -1) {
+    demoProjects[idx] = {
+      ...demoProjects[idx],
+      ...updates,
+      updatedAt: new Date().toISOString(),
+    };
+    return demoProjects[idx];
+  }
+  return null;
+};
+
+export const deleteDemoProject = (idOrSlug: string): boolean => {
+  const beforeCount = demoProjects.length;
+  demoProjects = demoProjects.filter((p) => p.id !== idOrSlug && p.slug !== idOrSlug);
+  return demoProjects.length < beforeCount;
+};
+
 /**
  * Handles incoming client requests when demo mode is active
  */
@@ -299,13 +347,28 @@ export function handleDemoRequest<T>(
       return {
         handled: true,
         data: {
-          totalProjects: DEMO_PROJECTS.length,
+          totalProjects: demoProjects.length,
           totalTasks: demoTasks.length,
           completedTasks: completed,
           myAssignedTasks: demoTasks.filter((t) => t.assigneeId === DEMO_USER.id).length,
           overdueTasks: 0,
         } as T,
       };
+    }
+
+    // Workspace Invites
+    if (cleanEndpoint.includes("/invites")) {
+      const inviteData = {
+        id: `inv-demo-${Date.now()}`,
+        workspaceId: "ws-demo-corp",
+        email: (body as { email?: string })?.email || "sarah.connor@enterprise.io",
+        role: (body as { role?: string })?.role || "MEMBER",
+        token: "demo-invite-token-okta-azure",
+        inviteLink: `${typeof window !== "undefined" ? window.location.origin : ""}/invite/demo-invite-token-okta-azure`,
+        expiresAt: new Date(Date.now() + 86400000 * 7).toISOString(),
+        createdAt: new Date().toISOString(),
+      };
+      return { handled: true, data: inviteData as T };
     }
 
     // Tasks inside project
@@ -343,18 +406,62 @@ export function handleDemoRequest<T>(
       return { handled: true, data: response as T };
     }
 
+    // Projects list or create
     if (cleanEndpoint.endsWith("/projects")) {
-      return { handled: true, data: DEMO_PROJECTS as T };
+      if (method === "POST") {
+        const created = addDemoProject((body as Partial<Project>) || {});
+        return { handled: true, data: created as T };
+      }
+      return { handled: true, data: [...demoProjects] as T };
     }
 
+    // Single Project operations
     if (cleanEndpoint.includes("/projects/")) {
       const parts = cleanEndpoint.split("/projects/");
       const projectSlugOrId = parts[1]?.split("/")[0];
-      const found = DEMO_PROJECTS.find((p) => p.slug === projectSlugOrId || p.id === projectSlugOrId);
-      return { handled: true, data: (found || DEMO_PROJECTS[0]) as T };
+
+      if (method === "PATCH") {
+        const updated = updateDemoProject(projectSlugOrId, (body as Partial<Project>) || {});
+        return {
+          handled: true,
+          data: (updated || { id: projectSlugOrId, ...((body as Partial<Project>) || {}) }) as T,
+        };
+      }
+
+      if (method === "DELETE") {
+        deleteDemoProject(projectSlugOrId);
+        return { handled: true, data: { id: projectSlugOrId } as T };
+      }
+
+      const found = demoProjects.find((p) => p.slug === projectSlugOrId || p.id === projectSlugOrId);
+      return { handled: true, data: (found || demoProjects[0]) as T };
+    }
+
+    // Workspace updates
+    if (method === "PATCH") {
+      return { handled: true, data: { ...DEMO_WORKSPACE, ...((body as Partial<Workspace>) || {}) } as T };
     }
 
     return { handled: true, data: DEMO_WORKSPACE as T };
+  }
+
+  // Public /invites/:token routes
+  if (cleanEndpoint.includes("/invites/")) {
+    if (cleanEndpoint.endsWith("/accept")) {
+      return { handled: true, data: { success: true, workspace: DEMO_WORKSPACE } as T };
+    }
+    const previewData = {
+      id: "inv-demo-123",
+      workspaceName: "DevBoard Core Engineering",
+      workspaceSlug: "devboard-engineering",
+      workspaceLogo: null,
+      inviterName: "Alex Rivera",
+      inviterEmail: "alex.rivera@devboard.io",
+      recipientEmail: "sarah.connor@enterprise.io",
+      role: "MEMBER",
+      expiresAt: new Date(Date.now() + 86400000 * 7).toISOString(),
+    };
+    return { handled: true, data: previewData as T };
   }
 
   // Cross-project My Tasks

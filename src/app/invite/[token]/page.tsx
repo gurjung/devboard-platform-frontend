@@ -10,6 +10,7 @@ import { AcceptInviteCard } from "@/features/invites/components/accept-invite-ca
 import { useAuth } from "@/features/auth/context/auth-context";
 import { Button } from "@/components/ui/button";
 import { en } from "@/locales/en";
+import { TourSpotlightWrapper } from "@/features/simulation/components/tour-spotlight-wrapper";
 
 interface InvitePageProps {
   params: Promise<{ token: string }>;
@@ -100,15 +101,17 @@ export default function InvitePage({ params }: InvitePageProps) {
             </Button>
           </div>
         ) : (
-          <AcceptInviteCard
-            invite={invite}
-            token={token}
-            user={user}
-            isAuthenticated={isAuthenticated}
-            isAccepting={acceptInviteMutation.isPending}
-            onAccept={handleAccept}
-            onSignOutAndSwitch={handleSignOutAndSwitch}
-          />
+          <TourSpotlightWrapper id="accept-invite-card">
+            <AcceptInviteCard
+              invite={invite}
+              token={token}
+              user={user}
+              isAuthenticated={isAuthenticated}
+              isAccepting={acceptInviteMutation.isPending}
+              onAccept={handleAccept}
+              onSignOutAndSwitch={handleSignOutAndSwitch}
+            />
+          </TourSpotlightWrapper>
         )}
       </div>
     </div>

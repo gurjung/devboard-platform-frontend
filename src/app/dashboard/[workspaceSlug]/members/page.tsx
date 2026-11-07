@@ -8,6 +8,7 @@ import { useWorkspaces } from "@/features/workspace/hooks/use-workspaces";
 import { useAuth } from "@/features/auth/context/auth-context";
 import { en } from "@/locales/en";
 import type { WorkspaceRole } from "@/features/workspace/types";
+import { TourSpotlightWrapper } from "@/features/simulation/components/tour-spotlight-wrapper";
 
 export default function WorkspaceMembersPage() {
   const params = useParams();
@@ -58,19 +59,23 @@ export default function WorkspaceMembersPage() {
 
         {canInvite && (
           <div className="shrink-0">
-            <InviteMemberDialog
-              workspaceId={workspace.id}
-              workspaceName={workspace.name}
-            />
+            <TourSpotlightWrapper id="invite-section">
+              <InviteMemberDialog
+                workspaceId={workspace.id}
+                workspaceName={workspace.name}
+              />
+            </TourSpotlightWrapper>
           </div>
         )}
       </div>
 
-      <MembersList
-        workspaceId={workspace.id}
-        currentUserId={user?.id || ""}
-        currentUserRole={role}
-      />
+      <TourSpotlightWrapper id="members-list">
+        <MembersList
+          workspaceId={workspace.id}
+          currentUserId={user?.id || ""}
+          currentUserRole={role}
+        />
+      </TourSpotlightWrapper>
     </div>
   );
 }

@@ -10,6 +10,7 @@ import { ProjectForm } from "@/features/projects/components/project-form";
 import { Button } from "@/components/ui/button";
 import { en } from "@/locales/en";
 import type { WorkspaceRole } from "@/features/workspace/types";
+import { TourSpotlightWrapper } from "@/features/simulation/components/tour-spotlight-wrapper";
 
 interface ProjectSettingsPageProps {
   params: Promise<{
@@ -106,12 +107,14 @@ export default function ProjectSettingsPage({ params }: ProjectSettingsPageProps
         </p>
       </div>
 
-      <ProjectForm
-        workspaceId={currentWorkspace.id}
-        workspaceSlug={currentWorkspace.slug}
-        project={project}
-        currentUserRole={role}
-      />
+      <TourSpotlightWrapper id="project-settings">
+        <ProjectForm
+          workspaceId={currentWorkspace.id}
+          workspaceSlug={currentWorkspace.slug}
+          project={project}
+          currentUserRole={role}
+        />
+      </TourSpotlightWrapper>
     </div>
   );
 }

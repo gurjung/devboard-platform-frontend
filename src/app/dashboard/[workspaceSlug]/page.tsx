@@ -21,6 +21,7 @@ import { useWorkspaces } from "@/features/workspace/hooks/use-workspaces";
 import { useWorkspaceStats } from "@/features/workspace/hooks/use-workspace-stats";
 import { useWorkspaceMembers } from "@/features/workspace/hooks/use-workspace-members";
 import { WorkspaceStatsRow } from "@/features/workspace/components/overview/workspace-stats-row";
+import { TourSpotlightWrapper } from "@/features/simulation/components/tour-spotlight-wrapper";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -168,13 +169,15 @@ export default function WorkspaceDashboardPage() {
 
       {/* Stats Row */}
       <section aria-label="Workspace Statistics">
-        {isStatsLoading ? (
-          <div className="flex h-24 items-center justify-center">
-            <Loader2 className="size-6 animate-spin text-muted-foreground" />
-          </div>
-        ) : (
-          <WorkspaceStatsRow workspaceSlug={workspaceSlug} stats={stats} />
-        )}
+        <TourSpotlightWrapper id="workspace-stats">
+          {isStatsLoading ? (
+            <div className="flex h-24 items-center justify-center">
+              <Loader2 className="size-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <WorkspaceStatsRow workspaceSlug={workspaceSlug} stats={stats} />
+          )}
+        </TourSpotlightWrapper>
       </section>
 
       {/* Main Content Grid: Recent Tasks & Projects / Team */}

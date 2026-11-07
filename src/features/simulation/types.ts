@@ -32,6 +32,9 @@ export interface StoryBanner {
   type: "info" | "warning" | "success" | "error";
   whatHappened?: string;
   resilienceDetail?: string;
+  chapter?: string;
+  highlights?: string[];
+  talkingPoints?: string[];
 }
 
 export interface SimulationStepContext {
@@ -59,6 +62,9 @@ export interface SimulationStep {
   title: string;
   description: string;
   expectedOutcome: string;
+  chapter?: string;
+  highlights?: string[];
+  talkingPoints?: string[];
   delayMs?: number;
   execute: (context: SimulationStepContext) => Promise<void>;
 }

@@ -35,6 +35,7 @@ import {
   EditTaskDialog,
 } from "@/features/tasks";
 import { en } from "@/locales/en";
+import { TourSpotlightWrapper } from "@/features/simulation/components/tour-spotlight-wrapper";
 
 interface ProjectPageProps {
   params: Promise<{
@@ -196,87 +197,93 @@ export default function ProjectHomePage({ params }: ProjectPageProps) {
   return (
     <div className="flex flex-col gap-5 w-full max-w-[1600px] mx-auto py-1 px-1 sm:px-2">
       {/* Project Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/60 pb-4">
-        <div className="flex items-center gap-3.5">
-          <ProjectAvatar
-            name={project.name}
-            image={project.logo}
-            className="size-12 rounded-xl border border-border shadow-xs"
-            fallbackClassName="text-sm font-bold"
-          />
-          <div className="space-y-0.5">
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold tracking-tight text-foreground">
-                {project.name}
-              </h1>
-              <Badge variant="outline" className="text-[10px] uppercase font-semibold">
-                Project
-              </Badge>
-            </div>
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Link
-                href={`/dashboard/${workspaceSlug}`}
-                className="font-medium hover:underline text-foreground"
-              >
-                {currentWorkspace?.name}
-              </Link>
-              <ChevronRight className="size-3 opacity-60" />
-              <span>{project.name}</span>
+      <TourSpotlightWrapper id="project-header">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/60 pb-4">
+          <div className="flex items-center gap-3.5">
+            <ProjectAvatar
+              name={project.name}
+              image={project.logo}
+              className="size-12 rounded-xl border border-border shadow-xs"
+              fallbackClassName="text-sm font-bold"
+            />
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-bold tracking-tight text-foreground">
+                  {project.name}
+                </h1>
+                <Badge variant="outline" className="text-[10px] uppercase font-semibold">
+                  Project
+                </Badge>
+              </div>
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Link
+                  href={`/dashboard/${workspaceSlug}`}
+                  className="font-medium hover:underline text-foreground"
+                >
+                  {currentWorkspace?.name}
+                </Link>
+                <ChevronRight className="size-3 opacity-60" />
+                <span>{project.name}</span>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="flex items-center gap-2.5 self-start sm:self-auto">
-          {/* View Selector Tabs */}
-          <ViewSelector
-            currentView={currentView}
-            onViewChange={setCurrentView}
-          />
+          <div className="flex items-center gap-2.5 self-start sm:self-auto">
+            {/* View Selector Tabs */}
+            <ViewSelector
+              currentView={currentView}
+              onViewChange={setCurrentView}
+            />
 
-          {/* Project Settings Link */}
-          {canManage && (
-            <Link
-              href={`/dashboard/${workspaceSlug}/projects/${project.slug}/settings`}
-            >
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 px-2.5 flex items-center gap-1.5 text-xs font-semibold rounded-xl cursor-pointer"
-                title="Project Settings"
+            {/* Project Settings Link */}
+            {canManage && (
+              <Link
+                href={`/dashboard/${workspaceSlug}/projects/${project.slug}/settings`}
               >
-                <Settings className="size-3.5" />
-                <span className="hidden md:inline">Settings</span>
-              </Button>
-            </Link>
-          )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 px-2.5 flex items-center gap-1.5 text-xs font-semibold rounded-xl cursor-pointer"
+                  title="Project Settings"
+                >
+                  <Settings className="size-3.5" />
+                  <span className="hidden md:inline">Settings</span>
+                </Button>
+              </Link>
+            )}
+          </div>
         </div>
-      </div>
+      </TourSpotlightWrapper>
 
       {/* Filter Toolbar */}
-      <TaskFilterBar
-        workspaceId={currentWorkspace!.id}
-        filters={filters}
-        onFiltersChange={setFilters}
-        onOpenCreateDialog={handleOpenGenericCreate}
-        totalCount={totalCount}
-      />
+      <TourSpotlightWrapper id="task-filter-bar">
+        <TaskFilterBar
+          workspaceId={currentWorkspace!.id}
+          filters={filters}
+          onFiltersChange={setFilters}
+          onOpenCreateDialog={handleOpenGenericCreate}
+          totalCount={totalCount}
+        />
+      </TourSpotlightWrapper>
 
       {/* Main View Area */}
       <div className="mt-1">
         {currentView === "table" && (
-          <TaskTableView
-            tasks={tasks}
-            isLoading={isTasksLoading}
-            hasNextPage={hasNextPage}
-            isFetchingNextPage={isFetchingNextPage}
-            onFetchNextPage={fetchNextPage}
-            onTaskClick={handleTaskClick}
-            onStatusChange={handleStatusChange}
-            onPriorityChange={handlePriorityChange}
-            onDeleteClick={handleDeleteTask}
-            onOpenCreateDialog={handleOpenGenericCreate}
-            hasActiveFilters={hasActiveFilters}
-          />
+          <TourSpotlightWrapper id="task-table-view">
+            <TaskTableView
+              tasks={tasks}
+              isLoading={isTasksLoading}
+              hasNextPage={hasNextPage}
+              isFetchingNextPage={isFetchingNextPage}
+              onFetchNextPage={fetchNextPage}
+              onTaskClick={handleTaskClick}
+              onStatusChange={handleStatusChange}
+              onPriorityChange={handlePriorityChange}
+              onDeleteClick={handleDeleteTask}
+              onOpenCreateDialog={handleOpenGenericCreate}
+              hasActiveFilters={hasActiveFilters}
+            />
+          </TourSpotlightWrapper>
         )}
 
         {currentView === "kanban" && (
@@ -289,11 +296,13 @@ export default function ProjectHomePage({ params }: ProjectPageProps) {
         )}
 
         {currentView === "calendar" && (
-          <TaskCalendarView
-            tasks={tasks}
-            onTaskClick={handleTaskClick}
-            onOpenCreateWithDueDate={handleOpenCreateWithDueDate}
-          />
+          <TourSpotlightWrapper id="task-calendar-view">
+            <TaskCalendarView
+              tasks={tasks}
+              onTaskClick={handleTaskClick}
+              onOpenCreateWithDueDate={handleOpenCreateWithDueDate}
+            />
+          </TourSpotlightWrapper>
         )}
       </div>
 
