@@ -2,7 +2,6 @@
 
 import { useEffect } from "react";
 import { useQueryClient, type InfiniteData } from "@tanstack/react-query";
-import { toast } from "sonner";
 import { useSocket } from "@/components/providers/socket-provider";
 import { useAuth } from "@/features/auth/context/auth-context";
 import type { Task, TasksResponse } from "../types";
@@ -62,13 +61,6 @@ export function useTaskRealtimeSync({
         queryKey: ["tasks", workspaceId, projectId],
         refetchType: "none",
       });
-
-      // Show toast if created by another user
-      if (actorId !== user?.id) {
-        toast.info(`Task created: "${task.title}"`, {
-          description: `By ${task.createdBy?.name || "a collaborator"}`,
-        });
-      }
     };
 
     // 2. Task Updated Listener

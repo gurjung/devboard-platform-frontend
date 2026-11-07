@@ -80,17 +80,6 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       setIsConnected(false);
     };
 
-    const handleTaskAssigned = ({
-      task,
-      assignedBy,
-    }: {
-      task: any;
-      assignedBy: { userId: string; email: string };
-    }) => {
-      // Invalidate personal assigned task queries
-      queryClient.invalidateQueries({ queryKey: ["my-tasks"] });
-    };
-
     const handleNewNotification = ({
       notification,
     }: {
@@ -139,7 +128,6 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
     s.on("connect", handleConnect);
     s.on("disconnect", handleDisconnect);
-    s.on("task:assigned", handleTaskAssigned);
     s.on("notification:new", handleNewNotification);
 
     if (!s.connected) {
@@ -151,7 +139,6 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     return () => {
       s.off("connect", handleConnect);
       s.off("disconnect", handleDisconnect);
-      s.off("task:assigned", handleTaskAssigned);
       s.off("notification:new", handleNewNotification);
     };
   }, [isAuthenticated, user, queryClient, router]);

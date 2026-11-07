@@ -32,3 +32,4 @@ export interface NotificationsResponse {
   hasMore: boolean;
   nextCursor?: string | null;
 }
+
