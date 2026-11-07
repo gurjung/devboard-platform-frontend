@@ -6,6 +6,7 @@ import { QueryProvider } from "@/components/providers/query-provider";
 import { AuthProvider } from "@/features/auth/context/auth-context";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { SimulationProvider, SimulationFloatingDock } from "@/features/simulation";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -51,8 +52,11 @@ export default function RootLayout({
               enableSystem
               disableTransitionOnChange
             >
-              {children}
-              <Toaster />
+              <SimulationProvider>
+                {children}
+                <SimulationFloatingDock />
+                <Toaster />
+              </SimulationProvider>
             </ThemeProvider>
           </QueryProvider>
         </AuthProvider>

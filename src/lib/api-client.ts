@@ -1,3 +1,5 @@
+import { chaosController } from "@/features/simulation/chaos-controller";
+
 export class ApiError extends Error {
   status: number;
   data?: any;
@@ -155,6 +157,44 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
   const currentToken = getAccessToken();
   if (!skipAuth && currentToken) {
     headers["Authorization"] = `Bearer ${currentToken}`;
+  }
+
+  const method = (customConfig.method || "GET").toUpperCase();
+
+  // Chaos & Simulation Interceptor
+  const chaosInterception = await chaosController.interceptRequest(endpoint, method);
+  if (chaosInterception?.errorToThrow) {
+    const { status, message, data } = chaosInterception.errorToThrow;
+
+    // If 401 was injected, test resilience of the silent token refresh queue
+    if (
+      status === 401 &&
+      !skipAuth &&
+      !endpoint.includes("/auth/login") &&
+      !endpoint.includes("/auth/register") &&
+      !endpoint.includes("/auth/refresh")
+    ) {
+      try {
+        const newToken = await refreshAuthToken();
+        if (!newToken) {
+          throw new ApiError(401, "Session expired. Please log in again.");
+        }
+        const retryHeaders = {
+          ...headers,
+          Authorization: `Bearer ${newToken}`,
+        };
+        const retryRes = await fetch(url, {
+          ...customConfig,
+          headers: retryHeaders,
+          credentials: "include",
+        });
+        return parseResponse<T>(retryRes);
+      } catch (err: any) {
+        throw new ApiError(401, err.message || "Session expired. Please log in again.");
+      }
+    }
+
+    throw new ApiError(status, message, data);
   }
 
   const config: RequestInit = {
