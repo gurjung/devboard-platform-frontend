@@ -26,10 +26,10 @@ import { useLogin } from "@/features/auth/hooks/use-login";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Sparkles } from "lucide-react";
-import { useAuth } from "@/features/auth/context/auth-context";
+import { useSimulation } from "@/features/simulation";
 
 export const SignInCard = () => {
-  const { loginAsDemoUser } = useAuth();
+  const { launchInstantDemo } = useSimulation();
   const loginMutation = useLogin();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -70,13 +70,7 @@ export const SignInCard = () => {
   };
 
   const handleDemoAccess = async () => {
-    try {
-      await loginAsDemoUser();
-      toast.success("Demo Mode Active: Welcome to DevBoard Engineering Workspace!");
-      router.push("/dashboard/devboard-engineering/projects/platform-core?view=kanban");
-    } catch {
-      toast.error("Failed to initialize demo session.");
-    }
+    await launchInstantDemo();
   };
 
   return (

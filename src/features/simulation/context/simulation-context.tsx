@@ -106,6 +106,27 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
   const stepAdvanceTriggerRef = useRef<(() => void) | null>(null);
   const speedRef = useRef<1 | 2 | 5>(1);
   const jumpTargetRef = useRef<number | null>(null);
+  const prevIsDemoRef = useRef(isDemo);
+
+  useEffect(() => {
+    const prevIsDemo = prevIsDemoRef.current;
+    if (prevIsDemo === isDemo) return;
+    prevIsDemoRef.current = isDemo;
+
+    if (isDemo) {
+      chaosController.resetConfig();
+      queryClient.clear();
+    } else {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+      isPausedRef.current = false;
+      stepAdvanceTriggerRef.current = null;
+      chaosController.resetConfig();
+      queryClient.clear();
+    }
+  }, [isDemo, queryClient]);
 
   // Sync state with ChaosController
   useEffect(() => {
@@ -410,29 +431,47 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
 
   const launchInstantDemo = useCallback(async () => {
     try {
+      chaosController.resetConfig();
+      setHighlightedTaskId(null);
+      setSpotlightMessage(null);
+      setStoryBanner(null);
       addLog("action", "Instant Demo Triggered", "Initializing sandbox session for Alex Rivera");
+      prevIsDemoRef.current = true;
       await loginAsDemoUser();
-      setDemoMode(true);
-      toast.success("Welcome! Demo engineering workspace loaded.");
+      queryClient.clear();
+      toast.success("Demo Mode Active: Welcome to DevBoard Engineering Workspace!");
       router.push("/dashboard/devboard-engineering/projects/platform-core?view=kanban");
     } catch {
       toast.error("Failed to start demo session.");
     }
-  }, [loginAsDemoUser, addLog, router]);
+  }, [loginAsDemoUser, addLog, queryClient, router]);
 
   const exitDemo = useCallback(async () => {
     try {
-      setDemoMode(false);
-      resetChaos();
-      setSpotlight(null);
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+      isPausedRef.current = false;
+      stepAdvanceTriggerRef.current = null;
+      setStatus("idle");
+      setCurrentStepIndex(0);
+      setActiveScenario(null);
+      setIsFloatingOpen(false);
+      chaosController.resetConfig();
+      setHighlightedTaskId(null);
+      setSpotlightMessage(null);
       setStoryBanner(null);
+      prevIsDemoRef.current = false;
       await logout();
+      queryClient.clear();
       toast.info("Exited demo sandbox.");
-      router.push("/sign-in");
+      router.replace("/sign-in");
     } catch {
-      router.push("/sign-in");
+      setDemoMode(false);
+      router.replace("/sign-in");
     }
-  }, [logout, resetChaos, setSpotlight, router]);
+  }, [logout, queryClient, router]);
 
   const currentStep =
     activeScenario && currentStepIndex < activeScenario.steps.length

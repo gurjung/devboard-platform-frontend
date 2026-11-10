@@ -1,11 +1,11 @@
 import { chaosController } from "@/features/simulation/chaos-controller";
-import { handleDemoRequest } from "@/features/simulation/mock-demo-data";
+import { handleDemoRequest, isDemoMode } from "@/features/simulation/mock-demo-data";
 
 export class ApiError extends Error {
   status: number;
-  data?: any;
+  data?: unknown;
 
-  constructor(status: number, message: string, data?: any) {
+  constructor(status: number, message: string, data?: unknown) {
     super(message);
     this.name = "ApiError";
     this.status = status;
@@ -14,11 +14,10 @@ export class ApiError extends Error {
 }
 
 const TOKEN_STORAGE_KEY = "devboard_access_token";
+const DEMO_REFRESHED_TOKEN = "demo-mock-jwt-token-refreshed";
 
 let inMemoryAccessToken: string | null = null;
-let isRefreshing = false;
 let refreshPromise: Promise<string | null> | null = null;
-let refreshSubscribers: Array<(token: string) => void> = [];
 let authFailureSubscribers: Array<() => void> = [];
 
 export const getAccessToken = (): string | null => {
@@ -56,22 +55,9 @@ export const onAuthFailure = (callback: () => void) => {
 };
 
 const notifyAuthFailure = () => {
+  if (isDemoMode()) return;
   setAccessToken(null);
   authFailureSubscribers.forEach((cb) => cb());
-};
-
-const subscribeTokenRefresh = (callback: (token: string) => void) => {
-  refreshSubscribers.push(callback);
-};
-
-const onTokenRefreshed = (token: string) => {
-  refreshSubscribers.forEach((cb) => cb(token));
-  refreshSubscribers = [];
-};
-
-const onTokenRefreshFailed = (error: any) => {
-  refreshSubscribers = [];
-  notifyAuthFailure();
 };
 
 const API_BASE_URL =
@@ -79,11 +65,15 @@ const API_BASE_URL =
   "https://devboard-platform-backend.onrender.com";
 
 export async function refreshAuthToken(): Promise<string | null> {
+  if (isDemoMode()) {
+    setAccessToken(DEMO_REFRESHED_TOKEN);
+    return DEMO_REFRESHED_TOKEN;
+  }
+
   if (refreshPromise) {
     return refreshPromise;
   }
 
-  isRefreshing = true;
   refreshPromise = (async () => {
     try {
       const refreshResponse = await fetch(`${API_BASE_URL}/auth/refresh`, {
@@ -93,6 +83,11 @@ export async function refreshAuthToken(): Promise<string | null> {
         },
         credentials: "include",
       });
+
+      if (isDemoMode()) {
+        setAccessToken(DEMO_REFRESHED_TOKEN);
+        return DEMO_REFRESHED_TOKEN;
+      }
 
       if (!refreshResponse.ok) {
         throw new Error("Session expired. Please log in again.");
@@ -106,13 +101,19 @@ export async function refreshAuthToken(): Promise<string | null> {
         throw new Error("No access token returned from refresh.");
       }
 
+      if (isDemoMode()) {
+        setAccessToken(DEMO_REFRESHED_TOKEN);
+        return DEMO_REFRESHED_TOKEN;
+      }
+
       setAccessToken(newAccessToken);
-      isRefreshing = false;
-      onTokenRefreshed(newAccessToken);
       return newAccessToken;
     } catch (refreshErr) {
-      isRefreshing = false;
-      onTokenRefreshFailed(refreshErr);
+      if (isDemoMode()) {
+        setAccessToken(DEMO_REFRESHED_TOKEN);
+        return DEMO_REFRESHED_TOKEN;
+      }
+      notifyAuthFailure();
       throw refreshErr;
     } finally {
       refreshPromise = null;
@@ -130,10 +131,7 @@ interface RequestOptions extends RequestInit {
 async function request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
   const { skipAuth = false, params, ...customConfig } = options;
 
-  let url = endpoint.startsWith("http")
-    ? endpoint
-    : `${API_BASE_URL}${endpoint.startsWith("/") ? "" : "/"}${endpoint}`;
-
+  let endpointWithParams = endpoint;
   if (params) {
     const searchParams = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
@@ -143,9 +141,13 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
     });
     const queryString = searchParams.toString();
     if (queryString) {
-      url += (url.includes("?") ? "&" : "?") + queryString;
+      endpointWithParams += (endpointWithParams.includes("?") ? "&" : "?") + queryString;
     }
   }
+
+  const url = endpointWithParams.startsWith("http")
+    ? endpointWithParams
+    : `${API_BASE_URL}${endpointWithParams.startsWith("/") ? "" : "/"}${endpointWithParams}`;
 
   const headers: Record<string, string> = {
     ...(customConfig.headers as Record<string, string>),
@@ -163,7 +165,7 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
   const method = (customConfig.method || "GET").toUpperCase();
 
   // Chaos & Simulation Interceptor
-  const chaosInterception = await chaosController.interceptRequest(endpoint, method);
+  const chaosInterception = await chaosController.interceptRequest(endpointWithParams, method);
   if (chaosInterception?.errorToThrow) {
     const { status, message, data } = chaosInterception.errorToThrow;
 
@@ -180,6 +182,14 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
         if (!newToken) {
           throw new ApiError(401, "Session expired. Please log in again.");
         }
+        const demoRetry = handleDemoRequest<T>(
+          endpointWithParams,
+          method,
+          customConfig.body
+        );
+        if (demoRetry.handled) {
+          return demoRetry.data as T;
+        }
         const retryHeaders = {
           ...headers,
           Authorization: `Bearer ${newToken}`,
@@ -190,8 +200,10 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
           credentials: "include",
         });
         return parseResponse<T>(retryRes);
-      } catch (err: any) {
-        throw new ApiError(401, err.message || "Session expired. Please log in again.");
+      } catch (err: unknown) {
+        const errMessage =
+          err instanceof Error ? err.message : "Session expired. Please log in again.";
+        throw new ApiError(401, errMessage);
       }
     }
 
@@ -199,7 +211,11 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
   }
 
   // Instant Demo Mode Interceptor
-  const demoRes = handleDemoRequest<T>(endpoint, method, customConfig.body);
+  const demoRes = handleDemoRequest<T>(
+    endpointWithParams,
+    method,
+    customConfig.body
+  );
   if (demoRes.handled) {
     return demoRes.data as T;
   }
@@ -217,8 +233,12 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
   let response: Response;
   try {
     response = await execute();
-  } catch (error: any) {
-    throw new ApiError(0, error.message || "Network error. Please check your connection.");
+  } catch (error: unknown) {
+    const errMessage =
+      error instanceof Error
+        ? error.message
+        : "Network error. Please check your connection.";
+    throw new ApiError(0, errMessage);
   }
 
   if (
@@ -234,6 +254,15 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
         throw new ApiError(401, "Session expired. Please log in again.");
       }
 
+      const demoRetry = handleDemoRequest<T>(
+        endpointWithParams,
+        method,
+        customConfig.body
+      );
+      if (demoRetry.handled) {
+        return demoRetry.data as T;
+      }
+
       const retryHeaders = {
         ...headers,
         Authorization: `Bearer ${newToken}`,
@@ -243,8 +272,10 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
         headers: retryHeaders,
       });
       return parseResponse<T>(retryRes);
-    } catch (err: any) {
-      throw new ApiError(401, err.message || "Session expired. Please log in again.");
+    } catch (err: unknown) {
+      const errMessage =
+        err instanceof Error ? err.message : "Session expired. Please log in again.";
+      throw new ApiError(401, errMessage);
     }
   }
 
@@ -272,7 +303,7 @@ export const apiClient = {
     return request<T>(endpoint, { ...options, method: "GET" });
   },
 
-  post<T>(endpoint: string, body?: any, options?: RequestOptions): Promise<T> {
+  post<T>(endpoint: string, body?: unknown, options?: RequestOptions): Promise<T> {
     const isFormData = body instanceof FormData;
     return request<T>(endpoint, {
       ...options,
@@ -281,7 +312,7 @@ export const apiClient = {
     });
   },
 
-  patch<T>(endpoint: string, body?: any, options?: RequestOptions): Promise<T> {
+  patch<T>(endpoint: string, body?: unknown, options?: RequestOptions): Promise<T> {
     const isFormData = body instanceof FormData;
     return request<T>(endpoint, {
       ...options,
@@ -290,7 +321,7 @@ export const apiClient = {
     });
   },
 
-  put<T>(endpoint: string, body?: any, options?: RequestOptions): Promise<T> {
+  put<T>(endpoint: string, body?: unknown, options?: RequestOptions): Promise<T> {
     const isFormData = body instanceof FormData;
     return request<T>(endpoint, {
       ...options,

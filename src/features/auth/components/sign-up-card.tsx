@@ -26,10 +26,10 @@ import { useRegister } from "@/features/auth/hooks/use-register";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Sparkles } from "lucide-react";
-import { useAuth } from "@/features/auth/context/auth-context";
+import { useSimulation } from "@/features/simulation";
 
 export const SignUpCard = () => {
-  const { loginAsDemoUser } = useAuth();
+  const { launchInstantDemo } = useSimulation();
   const registerMutation = useRegister();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -202,15 +202,7 @@ export const SignUpCard = () => {
             <Button
               type="button"
               variant="outline"
-              onClick={async () => {
-                try {
-                  await loginAsDemoUser();
-                  toast.success("Demo Mode Active: Welcome to DevBoard Engineering Workspace!");
-                  router.push("/dashboard/devboard-engineering/projects/platform-core?view=kanban");
-                } catch {
-                  toast.error("Failed to initialize demo session.");
-                }
-              }}
+              onClick={() => void launchInstantDemo()}
               className="w-full h-9 rounded-lg text-xs cursor-pointer gap-2 border-primary/35 bg-primary/10 text-brand-text hover:bg-primary/15 font-medium"
             >
               <Sparkles className="size-3.5" />

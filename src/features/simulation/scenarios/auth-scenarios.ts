@@ -41,8 +41,15 @@ export const authInstantDemoScenario: SimulationScenario = {
           "Workspace & Project Cache Ingestion",
           "Pre-loading 7 tasks across Backlog, Todo, In Progress, In Review, and Done."
         );
-        await ctx.queryClient.invalidateQueries({ queryKey: ["workspaces"] });
-        await ctx.queryClient.invalidateQueries({ queryKey: ["tasks"] });
+        await Promise.all([
+          ctx.queryClient.invalidateQueries({ queryKey: ["workspaces"] }),
+          ctx.queryClient.invalidateQueries({ queryKey: ["projects"] }),
+          ctx.queryClient.invalidateQueries({ queryKey: ["tasks"] }),
+          ctx.queryClient.invalidateQueries({ queryKey: ["my-tasks"] }),
+          ctx.queryClient.invalidateQueries({ queryKey: ["workspace-members"] }),
+          ctx.queryClient.invalidateQueries({ queryKey: ["workspace-stats"] }),
+          ctx.queryClient.invalidateQueries({ queryKey: ["notifications"] }),
+        ]);
         toast.success("Simulation: Workspace and Kanban board seeded!");
       },
     },
