@@ -15,9 +15,9 @@ export default function RootError({ error, reset }: RootErrorProps) {
   }, [error]);
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center p-6 text-center bg-background">
-      <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-destructive/10 text-destructive mb-4 shadow-sm">
-        <AlertCircle className="size-7" />
+    <main className="flex min-h-screen flex-col items-center justify-center p-6 text-center bg-background">
+      <div className="mx-auto flex size-12 items-center justify-center rounded-xl bg-destructive/10 text-destructive-text border border-destructive/20 mb-4">
+        <AlertCircle className="size-6" aria-hidden="true" />
       </div>
 
       <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
@@ -38,7 +38,7 @@ export default function RootError({ error, reset }: RootErrorProps) {
           Recover & Reload
         </Button>
       </div>
-    </div>
+    </main>
   );
 }
 

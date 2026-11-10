@@ -1,19 +1,27 @@
-import React from "react";
+import type React from "react";
 import {
-  Circle,
-  Clock,
-  PlayCircle,
-  Eye,
-  CheckCircle2,
-  ArrowDown,
-  Minus,
-  ArrowUp,
-  AlertTriangle,
   Table as TableIcon,
   Kanban as KanbanIcon,
   Calendar as CalendarIcon,
 } from "lucide-react";
 import type { TaskStatus, TaskPriority, TaskView } from "./types";
+import {
+  BacklogIcon,
+  TodoIcon,
+  InProgressIcon,
+  InReviewIcon,
+  DoneIcon,
+  PriorityLowIcon,
+  PriorityMediumIcon,
+  PriorityHighIcon,
+  PriorityUrgentIcon,
+} from "./components/task-icons";
+
+export function getShortTaskKey(taskId: string): string {
+  const cleaned = taskId.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+  const suffix = (cleaned.slice(-4) || "0001").padStart(4, "0");
+  return `DEV-${suffix}`;
+}
 
 export interface StatusConfig {
   id: TaskStatus;
@@ -30,9 +38,10 @@ export const TASK_STATUS_CONFIG: Record<TaskStatus, StatusConfig> = {
   BACKLOG: {
     id: "BACKLOG",
     label: "Backlog",
-    icon: Circle,
-    color: "text-slate-500",
-    badgeClass: "bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20",
+    icon: BacklogIcon,
+    color: "text-slate-600 dark:text-slate-400",
+    badgeClass:
+      "bg-muted/60 text-muted-foreground border-input",
     dotClass: "bg-slate-400",
     bgLight: "bg-slate-500/5",
     borderClass: "border-slate-500/30",
@@ -40,19 +49,21 @@ export const TASK_STATUS_CONFIG: Record<TaskStatus, StatusConfig> = {
   TODO: {
     id: "TODO",
     label: "To Do",
-    icon: Clock,
-    color: "text-blue-500",
-    badgeClass: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
-    dotClass: "bg-blue-500",
-    bgLight: "bg-blue-500/5",
-    borderClass: "border-blue-500/30",
+    icon: TodoIcon,
+    color: "text-sky-600 dark:text-sky-400",
+    badgeClass:
+      "bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/25",
+    dotClass: "bg-sky-500",
+    bgLight: "bg-sky-500/5",
+    borderClass: "border-sky-500/30",
   },
   IN_PROGRESS: {
     id: "IN_PROGRESS",
     label: "In Progress",
-    icon: PlayCircle,
-    color: "text-amber-500",
-    badgeClass: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
+    icon: InProgressIcon,
+    color: "text-amber-700 dark:text-amber-400",
+    badgeClass:
+      "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/25",
     dotClass: "bg-amber-500",
     bgLight: "bg-amber-500/5",
     borderClass: "border-amber-500/30",
@@ -60,19 +71,21 @@ export const TASK_STATUS_CONFIG: Record<TaskStatus, StatusConfig> = {
   IN_REVIEW: {
     id: "IN_REVIEW",
     label: "In Review",
-    icon: Eye,
-    color: "text-purple-500",
-    badgeClass: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20",
-    dotClass: "bg-purple-500",
-    bgLight: "bg-purple-500/5",
-    borderClass: "border-purple-500/30",
+    icon: InReviewIcon,
+    color: "text-indigo-600 dark:text-indigo-400",
+    badgeClass:
+      "bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-500/25",
+    dotClass: "bg-indigo-500",
+    bgLight: "bg-indigo-500/5",
+    borderClass: "border-indigo-500/30",
   },
   DONE: {
     id: "DONE",
     label: "Done",
-    icon: CheckCircle2,
-    color: "text-emerald-500",
-    badgeClass: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
+    icon: DoneIcon,
+    color: "text-emerald-600 dark:text-emerald-400",
+    badgeClass:
+      "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/25",
     dotClass: "bg-emerald-500",
     bgLight: "bg-emerald-500/5",
     borderClass: "border-emerald-500/30",
@@ -99,30 +112,34 @@ export const TASK_PRIORITY_CONFIG: Record<TaskPriority, PriorityConfig> = {
   LOW: {
     id: "LOW",
     label: "Low",
-    icon: ArrowDown,
-    color: "text-slate-500",
-    badgeClass: "bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20",
+    icon: PriorityLowIcon,
+    color: "text-slate-600 dark:text-slate-400",
+    badgeClass:
+      "bg-muted/60 text-muted-foreground border-input",
   },
   MEDIUM: {
     id: "MEDIUM",
     label: "Medium",
-    icon: Minus,
-    color: "text-blue-500",
-    badgeClass: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
+    icon: PriorityMediumIcon,
+    color: "text-sky-600 dark:text-sky-400",
+    badgeClass:
+      "bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/25",
   },
   HIGH: {
     id: "HIGH",
     label: "High",
-    icon: ArrowUp,
-    color: "text-amber-500",
-    badgeClass: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
+    icon: PriorityHighIcon,
+    color: "text-amber-700 dark:text-amber-400",
+    badgeClass:
+      "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/25",
   },
   URGENT: {
     id: "URGENT",
     label: "Urgent",
-    icon: AlertTriangle,
-    color: "text-rose-500",
-    badgeClass: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20",
+    icon: PriorityUrgentIcon,
+    color: "text-rose-600 dark:text-rose-400",
+    badgeClass:
+      "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/25",
   },
 };
 

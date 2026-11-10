@@ -1,6 +1,6 @@
 "use client";
 
-import React, { use, useState, useEffect } from "react";
+import React, { use, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -8,7 +8,6 @@ import {
   FolderKanban,
   Loader2,
   ChevronRight,
-  Layers,
 } from "lucide-react";
 import { useWorkspaces } from "@/features/workspace/hooks/use-workspaces";
 import { useProject } from "@/features/projects/hooks/use-project";
@@ -36,7 +35,6 @@ import {
   CreateTaskDialog,
   EditTaskDialog,
 } from "@/features/tasks";
-import { en } from "@/locales/en";
 import { TourSpotlightWrapper } from "@/features/simulation/components/tour-spotlight-wrapper";
 
 interface ProjectPageProps {
@@ -52,20 +50,12 @@ export default function ProjectHomePage({ params }: ProjectPageProps) {
   const searchParams = useSearchParams();
   const { user } = useAuth();
 
-  // Active View State (synced with ?view= URL query)
-  const initialView = (searchParams.get("view") as TaskView) || "table";
-  const [currentView, setCurrentView] = useState<TaskView>(
-    ["table", "kanban", "calendar"].includes(initialView)
-      ? initialView
-      : "table"
-  );
-
-  useEffect(() => {
-    const v = searchParams.get("view") as TaskView;
-    if (v && ["table", "kanban", "calendar"].includes(v)) {
-      setCurrentView(v);
-    }
-  }, [searchParams]);
+  // Derive active view directly from ?view= URL query so tabs, deep links, and tours stay single-sourced
+  const paramView = searchParams.get("view") as TaskView | null;
+  const currentView: TaskView =
+    paramView && ["table", "kanban", "calendar"].includes(paramView)
+      ? paramView
+      : "table";
 
   // Filters State
   const [filters, setFilters] = useState<TaskFilters>({
@@ -179,9 +169,9 @@ export default function ProjectHomePage({ params }: ProjectPageProps) {
         <div className="size-12 rounded-full bg-muted flex items-center justify-center mb-3">
           <FolderKanban className="size-6 text-muted-foreground" />
         </div>
-        <h2 className="text-xl font-bold text-foreground">Project not found</h2>
+        <h1 className="text-xl font-bold text-foreground">Project not found</h1>
         <p className="text-xs text-muted-foreground mt-1 max-w-sm">
-          The project you are looking for does not exist or you don't have access to it.
+          The project you are looking for does not exist or you don&apos;t have access to it.
         </p>
         <Button
           variant="outline"
@@ -204,48 +194,51 @@ export default function ProjectHomePage({ params }: ProjectPageProps) {
   );
 
   return (
-    <div className="flex flex-col gap-5 w-full max-w-[1600px] mx-auto py-1 px-1 sm:px-2">
+    <div className="flex flex-col gap-4 w-full max-w-[1600px] mx-auto py-1 px-1 sm:px-2">
       {/* Project Header Banner */}
       <TourSpotlightWrapper id="project-header">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/60 pb-4">
-          <div className="flex items-center gap-3.5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 border-b border-border/50 pb-4">
+          <div className="flex items-center gap-3 min-w-0">
             <ProjectAvatar
               name={project.name}
               image={project.logo}
-              className="size-12 rounded-xl border border-border shadow-xs"
-              fallbackClassName="text-sm font-bold"
+              className="size-10 rounded-lg border border-border/50 shadow-2xs shrink-0"
+              fallbackClassName="text-xs font-semibold"
             />
-            <div className="space-y-0.5">
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold tracking-tight text-foreground">
+            <div className="space-y-0.5 min-w-0">
+              <div className="flex items-center gap-2 min-w-0">
+                <h1 className="text-lg sm:text-xl font-semibold tracking-tight text-foreground truncate">
                   {project.name}
                 </h1>
-                <Badge variant="outline" className="text-[10px] uppercase font-semibold">
+                <Badge
+                  variant="outline"
+                  className="text-[10px] uppercase font-medium tracking-wider rounded-md px-1.5 py-0 h-5 text-muted-foreground border-border/70"
+                >
                   Project
                 </Badge>
               </div>
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground truncate">
                 <Link
                   href={`/dashboard/${workspaceSlug}`}
-                  className="font-medium hover:underline text-foreground"
+                  className="font-medium hover:text-foreground transition-colors whitespace-nowrap"
                 >
                   {currentWorkspace?.name}
                 </Link>
-                <ChevronRight className="size-3 opacity-60" />
-                <span>{project.name}</span>
+                <ChevronRight className="size-3 text-muted-foreground shrink-0" aria-hidden="true" />
+                <span className="truncate">{project.name}</span>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5 self-start sm:self-auto">
+          <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto shrink-0">
             {/* Live Presence / WebSocket Status */}
             {isWsConnected && (
               <div
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-medium"
+                className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs font-medium tabular-nums"
                 title={`${onlineUsers.length} collaborator${onlineUsers.length === 1 ? "" : "s"} currently online`}
               >
-                <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="hidden sm:inline">
+                <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" aria-hidden="true" />
+                <span className="hidden sm:inline whitespace-nowrap">
                   {onlineUsers.length > 0
                     ? `${onlineUsers.length} online`
                     : "Live"}
@@ -256,24 +249,26 @@ export default function ProjectHomePage({ params }: ProjectPageProps) {
             {/* View Selector Tabs */}
             <ViewSelector
               currentView={currentView}
-              onViewChange={setCurrentView}
+              onViewChange={() => {}}
             />
 
             {/* Project Settings Link */}
             {canManage && (
-              <Link
-                href={`/dashboard/${workspaceSlug}/projects/${project.slug}/settings`}
+              <Button
+                variant="outline"
+                size="sm"
+                nativeButton={false}
+                render={
+                  <Link
+                    href={`/dashboard/${workspaceSlug}/projects/${project.slug}/settings`}
+                  />
+                }
+                className="h-8 px-2.5 inline-flex items-center gap-1.5 text-xs font-medium rounded-lg"
+                aria-label="Project Settings"
               >
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8 px-2.5 flex items-center gap-1.5 text-xs font-semibold rounded-xl cursor-pointer"
-                  title="Project Settings"
-                >
-                  <Settings className="size-3.5" />
-                  <span className="hidden md:inline">Settings</span>
-                </Button>
-              </Link>
+                <Settings className="size-3.5" aria-hidden="true" />
+                <span className="hidden md:inline">Settings</span>
+              </Button>
             )}
           </div>
         </div>
@@ -291,7 +286,13 @@ export default function ProjectHomePage({ params }: ProjectPageProps) {
       </TourSpotlightWrapper>
 
       {/* Main View Area */}
-      <div className="mt-1">
+      <div
+        id={`view-panel-${currentView}`}
+        role="tabpanel"
+        aria-labelledby={`view-tab-${currentView}`}
+        tabIndex={0}
+        className="mt-1 outline-none focus-visible:outline-2 focus-visible:outline-ring rounded-xl"
+      >
         {currentView === "table" && (
           <TourSpotlightWrapper id="task-table-view">
             <TaskTableView

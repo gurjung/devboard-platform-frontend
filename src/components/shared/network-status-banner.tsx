@@ -30,7 +30,7 @@ export function NetworkStatusBanner() {
         "sticky top-0 z-40 flex items-center justify-between px-4 py-2 text-xs font-medium transition-all duration-300 shadow-xs",
         !isOnline
           ? "bg-destructive text-destructive-foreground"
-          : "bg-emerald-600 text-white"
+          : "bg-emerald-700 text-white"
       )}
     >
       <div className="flex items-center gap-2 mx-auto sm:mx-0">

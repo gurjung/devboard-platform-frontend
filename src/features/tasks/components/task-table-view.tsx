@@ -16,6 +16,7 @@ import {
 import { format, isPast, isToday } from "date-fns";
 import { cn } from "@/lib/utils";
 import type { Task, TaskPriority, TaskStatus } from "../types";
+import { getShortTaskKey } from "../constants";
 import { TaskStatusBadge } from "./task-status-badge";
 import { TaskPriorityBadge } from "./task-priority-badge";
 import { TaskAssigneeAvatar } from "./task-assignee-avatar";
@@ -60,7 +61,14 @@ export function TaskTableView({
 }: TaskTableViewProps) {
   const [sortField, setSortField] = React.useState<SortField | null>(null);
   const [sortDirection, setSortDirection] = React.useState<SortDirection>("asc");
+  const [sortAnnouncement, setSortAnnouncement] = React.useState("");
   const sentinelRef = React.useRef<HTMLDivElement | null>(null);
+  const captionId = React.useId();
+
+  const collator = React.useMemo(
+    () => new Intl.Collator(undefined, { numeric: true, sensitivity: "base" }),
+    []
+  );
 
   // Setup IntersectionObserver for infinite scroll sentinel
   React.useEffect(() => {
@@ -79,17 +87,28 @@ export function TaskTableView({
     return () => observer.disconnect();
   }, [hasNextPage, isFetchingNextPage, onFetchNextPage]);
 
-  const handleSort = (field: SortField) => {
+  const handleSort = (field: SortField, label: string) => {
+    let nextField: SortField | null = field;
+    let nextDirection: SortDirection = "asc";
+
     if (sortField === field) {
       if (sortDirection === "asc") {
-        setSortDirection("desc");
+        nextDirection = "desc";
       } else {
-        setSortField(null);
-        setSortDirection("asc");
+        nextField = null;
       }
+    }
+
+    setSortField(nextField);
+    setSortDirection(nextDirection);
+
+    const countLabel = `${tasks.length} ${tasks.length === 1 ? "task" : "tasks"}`;
+    if (nextField) {
+      setSortAnnouncement(
+        `Sorted by ${label}, ${nextDirection === "asc" ? "ascending" : "descending"}, ${countLabel}`
+      );
     } else {
-      setSortField(field);
-      setSortDirection("asc");
+      setSortAnnouncement(`Default task order restored, ${countLabel}`);
     }
   };
 
@@ -112,42 +131,47 @@ export function TaskTableView({
     };
 
     return [...tasks].sort((a, b) => {
+      if (sortField === "dueDate") {
+        if (!a.dueDate && !b.dueDate) return 0;
+        if (!a.dueDate) return 1;
+        if (!b.dueDate) return -1;
+        const comparison =
+          new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+        return sortDirection === "asc" ? comparison : -comparison;
+      }
+
       let comparison = 0;
       if (sortField === "title") {
-        comparison = a.title.localeCompare(b.title);
+        comparison = collator.compare(a.title, b.title);
       } else if (sortField === "status") {
         comparison = statusWeight[a.status] - statusWeight[b.status];
       } else if (sortField === "priority") {
         comparison = priorityWeight[a.priority] - priorityWeight[b.priority];
-      } else if (sortField === "dueDate") {
-        if (!a.dueDate) return 1;
-        if (!b.dueDate) return -1;
-        comparison = new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
       }
 
       return sortDirection === "asc" ? comparison : -comparison;
     });
-  }, [tasks, sortField, sortDirection]);
+  }, [tasks, sortField, sortDirection, collator]);
 
   if (isLoading && tasks.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[300px] border border-border/60 rounded-2xl bg-card">
-        <Loader2 className="size-8 animate-spin text-muted-foreground" />
+      <div className="flex flex-col items-center justify-center min-h-[300px] border border-border/50 rounded-xl bg-card">
+        <Loader2 className="size-7 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
   if (tasks.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[320px] rounded-2xl border border-dashed border-border/80 bg-muted/10 p-8 text-center">
-        <div className="size-12 rounded-2xl bg-muted flex items-center justify-center mb-3 text-muted-foreground">
-          <FolderOpen className="size-6" />
+      <div className="flex flex-col items-center justify-center min-h-[320px] rounded-xl border border-dashed border-border bg-muted/15 p-8 text-center">
+        <div className="size-11 rounded-xl bg-muted flex items-center justify-center mb-3 text-muted-foreground">
+          <FolderOpen className="size-5" aria-hidden="true" />
         </div>
-        <h3 className="text-base font-bold text-foreground">
+        <h2 className="text-sm font-semibold text-foreground">
           {hasActiveFilters
             ? en.tasks.noTasksFound
             : en.tasks.emptyProjectTasks}
-        </h3>
+        </h2>
         <p className="text-xs text-muted-foreground mt-1 max-w-sm">
           {hasActiveFilters
             ? en.tasks.noTasksFoundDescription
@@ -156,7 +180,7 @@ export function TaskTableView({
         <Button
           size="sm"
           onClick={onOpenCreateDialog}
-          className="mt-4 text-xs font-semibold rounded-xl cursor-pointer"
+          className="mt-4 h-8 px-3.5 text-xs font-medium rounded-lg cursor-pointer"
         >
           {en.tasks.createTask}
         </Button>
@@ -166,80 +190,154 @@ export function TaskTableView({
 
   const renderSortIndicator = (field: SortField) => {
     if (sortField !== field) {
-      return <ArrowUpDown className="size-3 opacity-40 ml-1" />;
+      return (
+        <ArrowUpDown
+          aria-hidden="true"
+          className="size-3 text-muted-foreground ml-1 shrink-0"
+        />
+      );
     }
     return sortDirection === "asc" ? (
-      <ArrowUp className="size-3 text-primary ml-1" />
+      <ArrowUp
+        aria-hidden="true"
+        className="size-3 text-brand-text ml-1 shrink-0"
+      />
     ) : (
-      <ArrowDown className="size-3 text-primary ml-1" />
+      <ArrowDown
+        aria-hidden="true"
+        className="size-3 text-brand-text ml-1 shrink-0"
+      />
     );
   };
 
   return (
-    <div className="rounded-2xl border border-border/60 bg-card shadow-2xs overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-xs">
+    <div className="rounded-xl border border-border/50 bg-card overflow-hidden">
+      <div role="status" className="sr-only">
+        {sortAnnouncement}
+      </div>
+
+      <div
+        tabIndex={0}
+        role="region"
+        aria-labelledby={captionId}
+        className="overflow-x-auto focus-visible:outline-2 focus-visible:outline-ring focus-visible:-outline-offset-2"
+      >
+        <table className="w-full min-w-[760px] text-left text-xs border-separate border-spacing-0">
+          <caption id={captionId} className="sr-only">
+            Project tasks list
+          </caption>
+
           {/* Table Header */}
-          <thead className="bg-muted/40 border-b border-border/60 text-muted-foreground font-semibold select-none">
+          <thead className="sticky top-0 z-10 bg-muted/60 backdrop-blur-xs text-muted-foreground font-medium select-none">
             <tr>
               {/* Status */}
               <th
-                onClick={() => handleSort("status")}
-                className="py-3 px-4 w-36 cursor-pointer hover:text-foreground transition-colors"
+                scope="col"
+                aria-sort={
+                  sortField === "status"
+                    ? sortDirection === "asc"
+                      ? "ascending"
+                      : "descending"
+                    : undefined
+                }
+                className="p-0 w-36 border-b border-border/70"
               >
-                <div className="flex items-center">
+                <button
+                  type="button"
+                  onClick={() => handleSort("status", en.tasks.tableHeaders.status)}
+                  className="flex w-full min-h-9 items-center py-2 px-3.5 text-left font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-ring focus-visible:-outline-offset-2"
+                >
                   <span>{en.tasks.tableHeaders.status}</span>
                   {renderSortIndicator("status")}
-                </div>
+                </button>
               </th>
 
               {/* Task Title & Description */}
               <th
-                onClick={() => handleSort("title")}
-                className="py-3 px-4 min-w-[200px] max-w-sm md:max-w-md cursor-pointer hover:text-foreground transition-colors"
+                scope="col"
+                aria-sort={
+                  sortField === "title"
+                    ? sortDirection === "asc"
+                      ? "ascending"
+                      : "descending"
+                    : undefined
+                }
+                className="p-0 min-w-[240px] max-w-md border-b border-border/70"
               >
-                <div className="flex items-center">
+                <button
+                  type="button"
+                  onClick={() => handleSort("title", en.tasks.tableHeaders.task)}
+                  className="flex w-full min-h-9 items-center py-2 px-3.5 text-left font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-ring focus-visible:-outline-offset-2"
+                >
                   <span>{en.tasks.tableHeaders.task}</span>
                   {renderSortIndicator("title")}
-                </div>
+                </button>
               </th>
 
               {/* Priority */}
               <th
-                onClick={() => handleSort("priority")}
-                className="py-3 px-4 w-32 cursor-pointer hover:text-foreground transition-colors"
+                scope="col"
+                aria-sort={
+                  sortField === "priority"
+                    ? sortDirection === "asc"
+                      ? "ascending"
+                      : "descending"
+                    : undefined
+                }
+                className="p-0 w-32 border-b border-border/70"
               >
-                <div className="flex items-center">
+                <button
+                  type="button"
+                  onClick={() => handleSort("priority", en.tasks.tableHeaders.priority)}
+                  className="flex w-full min-h-9 items-center py-2 px-3.5 text-left font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-ring focus-visible:-outline-offset-2"
+                >
                   <span>{en.tasks.tableHeaders.priority}</span>
                   {renderSortIndicator("priority")}
-                </div>
+                </button>
               </th>
 
-              {/* Assignee */}
-              <th className="py-3 px-4 w-44">
+              {/* Assignee (non-sortable) */}
+              <th
+                scope="col"
+                className="py-2 px-3.5 w-44 border-b border-border/70 font-medium text-muted-foreground"
+              >
                 <span>{en.tasks.tableHeaders.assignee}</span>
               </th>
 
               {/* Due Date */}
               <th
-                onClick={() => handleSort("dueDate")}
-                className="py-3 px-4 w-36 cursor-pointer hover:text-foreground transition-colors"
+                scope="col"
+                aria-sort={
+                  sortField === "dueDate"
+                    ? sortDirection === "asc"
+                      ? "ascending"
+                      : "descending"
+                    : undefined
+                }
+                className="p-0 w-36 border-b border-border/70"
               >
-                <div className="flex items-center">
+                <button
+                  type="button"
+                  onClick={() => handleSort("dueDate", en.tasks.tableHeaders.dueDate)}
+                  className="flex w-full min-h-9 items-center py-2 px-3.5 text-left font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-ring focus-visible:-outline-offset-2"
+                >
                   <span>{en.tasks.tableHeaders.dueDate}</span>
                   {renderSortIndicator("dueDate")}
-                </div>
+                </button>
               </th>
 
               {/* Actions */}
-              <th className="py-3 px-3 w-14 text-right">
+              <th
+                scope="col"
+                className="py-2 px-3 w-12 text-right border-b border-border/70 font-medium"
+              >
                 <span className="sr-only">{en.tasks.tableHeaders.actions}</span>
               </th>
             </tr>
           </thead>
 
           {/* Table Body */}
-          <tbody className="divide-y divide-border/40">
+          <tbody className="[&_tr:last-child_td]:border-b-0">
             {sortedTasks.map((task) => {
               const isOverdue =
                 task.dueDate &&
@@ -251,6 +349,8 @@ export function TaskTableView({
                 ? format(new Date(task.dueDate), "MMM d, yyyy")
                 : null;
 
+              const issueKey = getShortTaskKey(task.id);
+
               return (
                 <tr
                   key={task.id}
@@ -258,28 +358,46 @@ export function TaskTableView({
                   className="group hover:bg-muted/30 transition-colors cursor-pointer"
                 >
                   {/* Status Cell */}
-                  <td className="py-3 px-4">
+                  <td
+                    className="py-2.5 px-3.5 border-b border-border/50"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <TaskStatusBadge
                       status={task.status}
                       size="sm"
+                      interactive
+                      onStatusChange={(newStatus) =>
+                        onStatusChange(task.id, newStatus)
+                      }
                     />
                   </td>
 
                   {/* Task Title & Desc Cell */}
-                  <td className="py-3 px-4 max-w-sm md:max-w-md">
+                  <td className="py-2.5 px-3.5 max-w-md border-b border-border/40">
                     <div className="flex flex-col gap-0.5 min-w-0">
-                      <span
-                        className={cn(
-                          "font-semibold text-foreground text-xs line-clamp-1 truncate break-all block group-hover:text-primary transition-colors",
-                          task.status === "DONE" && "line-through text-muted-foreground"
-                        )}
-                        title={task.title}
-                      >
-                        {task.title}
-                      </span>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="font-mono text-[11px] font-medium text-muted-foreground tabular-nums shrink-0">
+                          {issueKey}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onTaskClick(task);
+                          }}
+                          className={cn(
+                            "min-w-0 truncate text-left font-medium text-foreground text-xs group-hover:text-brand-text hover:text-brand-text focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2 rounded-xs transition-colors cursor-pointer",
+                            task.status === "DONE" &&
+                              "line-through text-muted-foreground"
+                          )}
+                          title={task.title}
+                        >
+                          {task.title}
+                        </button>
+                      </div>
                       {task.description && (
                         <span
-                          className="text-[11px] text-muted-foreground line-clamp-1 truncate break-all block"
+                          className="text-[11px] text-muted-foreground truncate block pl-[62px]"
                           title={task.description}
                         >
                           {task.description}
@@ -289,15 +407,22 @@ export function TaskTableView({
                   </td>
 
                   {/* Priority Cell */}
-                  <td className="py-3 px-4">
+                  <td
+                    className="py-2.5 px-3.5 border-b border-border/40"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <TaskPriorityBadge
                       priority={task.priority}
                       size="sm"
+                      interactive
+                      onPriorityChange={(newPriority) =>
+                        onPriorityChange(task.id, newPriority)
+                      }
                     />
                   </td>
 
                   {/* Assignee Cell */}
-                  <td className="py-3 px-4">
+                  <td className="py-2.5 px-3.5 border-b border-border/40">
                     <TaskAssigneeAvatar
                       assignee={task.assignee}
                       size="sm"
@@ -306,41 +431,46 @@ export function TaskTableView({
                   </td>
 
                   {/* Due Date Cell */}
-                  <td className="py-3 px-4">
+                  <td className="py-2.5 px-3.5 border-b border-border/40 tabular-nums">
                     {formattedDate ? (
                       <div
                         className={cn(
                           "inline-flex items-center gap-1.5 text-xs font-medium",
                           isOverdue
-                            ? "text-rose-600 dark:text-rose-400 font-semibold"
+                            ? "text-rose-700 dark:text-rose-300 font-semibold"
                             : "text-muted-foreground"
                         )}
                       >
                         {isOverdue ? (
-                          <AlertCircle className="size-3.5 text-rose-500 shrink-0" />
+                          <AlertCircle className="size-3.5 text-rose-600 dark:text-rose-400 shrink-0" aria-hidden="true" />
                         ) : (
-                          <CalendarIcon className="size-3.5 opacity-60 shrink-0" />
+                          <CalendarIcon className="size-3.5 text-muted-foreground shrink-0" aria-hidden="true" />
                         )}
                         <span>{formattedDate}</span>
                       </div>
                     ) : (
-                      <span className="text-muted-foreground/60 text-[11px]">—</span>
+                      <span className="text-muted-foreground text-[11px]">
+                        —
+                      </span>
                     )}
                   </td>
 
                   {/* Action Menu Cell */}
                   <td
-                    className="py-3 px-3 text-right"
+                    className="py-2.5 px-3 text-right border-b border-border/40"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <DropdownMenu>
-                      <DropdownMenuTrigger className="size-7 rounded-lg inline-flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 cursor-pointer outline-none opacity-0 group-hover:opacity-100 transition-opacity">
-                        <MoreVertical className="size-3.5" />
+                      <DropdownMenuTrigger
+                        aria-label={`Actions for ${task.title}`}
+                        className="size-7 rounded-md inline-flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
+                      >
+                        <MoreVertical className="size-3.5" aria-hidden="true" />
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-36 p-1">
+                      <DropdownMenuContent align="end" className="w-36 p-1 rounded-xl">
                         <DropdownMenuItem
                           onClick={() => onTaskClick(task)}
-                          className="flex items-center gap-2 text-xs cursor-pointer"
+                          className="flex items-center gap-2 text-xs cursor-pointer rounded-md"
                         >
                           <Edit className="size-3.5" />
                           <span>{en.tasks.editTask}</span>
@@ -349,7 +479,7 @@ export function TaskTableView({
                           <DropdownMenuItem
                             onClick={() => onDeleteClick(task)}
                             variant="destructive"
-                            className="flex items-center gap-2 text-xs cursor-pointer"
+                            className="flex items-center gap-2 text-xs cursor-pointer rounded-md"
                           >
                             <Trash2 className="size-3.5" />
                             <span>{en.tasks.deleteTask}</span>
@@ -366,10 +496,10 @@ export function TaskTableView({
       </div>
 
       {/* Infinite Scroll Sentinel */}
-      <div ref={sentinelRef} className="py-2 flex items-center justify-center">
+      <div ref={sentinelRef} className="py-1.5 flex items-center justify-center">
         {isFetchingNextPage && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground py-2">
-            <Loader2 className="size-4 animate-spin text-primary" />
+          <div className="flex items-center gap-2 text-xs text-muted-foreground py-1.5">
+            <Loader2 className="size-3.5 animate-spin text-brand-text" />
             <span>Loading more tasks...</span>
           </div>
         )}

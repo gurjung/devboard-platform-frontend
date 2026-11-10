@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useId, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -9,9 +9,6 @@ import {
   Copy,
   Check,
   Clock,
-  Sparkles,
-  ShieldAlert,
-  ArrowRight,
 } from "lucide-react";
 import { en } from "@/locales/en";
 import { FormDialog } from "@/components/shared/form-dialog";
@@ -55,6 +52,13 @@ export function InviteMemberDialog({
 
   const [generatedLink, setGeneratedLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+
+  const inviteLinkId = useId();
+  const emailId = useId();
+  const emailErrorId = useId();
+  const roleLabelId = useId();
+  const roleTriggerId = useId();
+  const roleErrorId = useId();
 
   const form = useForm<InviteMemberInput>({
     resolver: zodResolver(inviteMemberSchema),
@@ -103,9 +107,10 @@ export function InviteMemberDialog({
         setGeneratedLink(fullUrl);
         toast.success(en.workspace.invite.dialog.toastSuccess);
       },
-      onError: (err: any) => {
-        const status = err?.status || err?.response?.status;
-        const msg = err?.message || "";
+      onError: (err: unknown) => {
+        const errorObj = err as { status?: number; response?: { status?: number }; message?: string };
+        const status = errorObj?.status || errorObj?.response?.status;
+        const msg = errorObj?.message || "";
         if (status === 409 || msg.includes("already a member")) {
           toast.error(en.workspace.invite.dialog.toastErrorMember);
         } else if (status === 403) {
@@ -133,15 +138,16 @@ export function InviteMemberDialog({
         children || (
           <Button
             type="button"
-            className="flex items-center gap-2 cursor-pointer shadow-sm"
+            size="sm"
+            className="h-8 px-3 rounded-lg text-xs font-medium inline-flex items-center gap-1.5 cursor-pointer"
           >
-            <UserPlus className="size-4" />
+            <UserPlus className="size-3.5" />
             <span>{en.workspace.collaboration.inviteButton}</span>
           </Button>
         )
       }
     >
-      <p className="text-xs text-muted-foreground text-center -mt-2 mb-3">
+      <p className="text-xs text-muted-foreground text-left -mt-1 mb-3">
         {generatedLink
           ? en.workspace.invite.generatedView.description
           : workspaceName
@@ -150,27 +156,32 @@ export function InviteMemberDialog({
       </p>
 
       {generatedLink ? (
-        <div className="flex flex-col gap-5 py-2">
-          <div className="flex flex-col gap-2">
-            <label className="text-xs font-semibold text-foreground">
+        <div className="flex flex-col gap-4 py-1">
+          <div className="flex flex-col gap-1.5">
+            <label
+              htmlFor={inviteLinkId}
+              className="text-xs font-medium text-foreground"
+            >
               Shareable Invitation Link
             </label>
             <div className="flex items-center gap-2">
               <Input
+                id={inviteLinkId}
                 readOnly
                 value={generatedLink}
                 onFocus={(e) => e.target.select()}
-                className="font-mono text-xs bg-muted/30 select-all cursor-text"
+                className="font-mono text-xs h-8 rounded-lg bg-muted/30 select-all cursor-text"
               />
               <Button
                 type="button"
+                size="sm"
                 variant={copied ? "default" : "outline"}
                 onClick={handleCopyLink}
-                className="shrink-0 flex items-center gap-1.5 min-w-[105px] cursor-pointer"
+                className="shrink-0 h-8 rounded-lg text-xs flex items-center gap-1.5 min-w-[96px] cursor-pointer"
               >
                 {copied ? (
                   <>
-                    <Check className="size-3.5 text-emerald-500" />
+                    <Check className="size-3.5 text-current" />
                     <span>{en.workspace.invite.generatedView.copiedButton}</span>
                   </>
                 ) : (
@@ -183,53 +194,63 @@ export function InviteMemberDialog({
             </div>
           </div>
 
-          <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-primary/5 border border-primary/10 text-xs text-muted-foreground">
-            <Clock className="size-4 text-primary shrink-0" />
+          <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-primary/5 border border-primary/15 text-xs text-muted-foreground">
+            <Clock className="size-4 text-brand-text shrink-0" />
             <span>
               This link is single-use and will automatically expire in{" "}
               <strong className="text-foreground">7 days</strong>.
             </span>
           </div>
 
-          <div className="flex items-center justify-between border-t border-border pt-4 mt-2">
+          <div className="flex items-center justify-between border-t border-border/70 pt-3.5 mt-1">
             <Button
               type="button"
               variant="ghost"
               size="sm"
               onClick={handleReset}
-              className="text-xs cursor-pointer text-muted-foreground hover:text-foreground"
+              className="h-8 rounded-lg text-xs cursor-pointer text-muted-foreground hover:text-foreground"
             >
               Invite Another Member
             </Button>
             <Button
               type="button"
+              size="sm"
               onClick={handleClose}
-              className="cursor-pointer"
+              className="h-8 rounded-lg text-xs cursor-pointer"
             >
               {en.workspace.invite.generatedView.doneButton}
             </Button>
           </div>
         </div>
       ) : (
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-2">
-          <FieldGroup className="space-y-4">
+        <form onSubmit={form.handleSubmit(onSubmit)} noValidate className="space-y-4 py-1">
+          <FieldGroup className="space-y-3.5">
             <Field invalid={!!form.formState.errors.email}>
-              <FieldLabel className="text-xs font-semibold">
+              <FieldLabel htmlFor={emailId} className="text-xs font-medium">
                 {en.workspace.invite.dialog.emailLabel}
               </FieldLabel>
               <Input
+                id={emailId}
                 type="email"
+                autoComplete="email"
                 placeholder={en.workspace.invite.dialog.emailPlaceholder}
+                className="h-9 rounded-lg text-xs"
                 disabled={createInviteMutation.isPending}
+                aria-invalid={!!form.formState.errors.email}
+                aria-describedby={form.formState.errors.email ? emailErrorId : undefined}
                 {...form.register("email")}
               />
-              <FieldError>
+              <FieldError id={emailErrorId}>
                 {form.formState.errors.email?.message}
               </FieldError>
             </Field>
 
             <Field invalid={!!form.formState.errors.role}>
-              <FieldLabel className="text-xs font-semibold">
+              <FieldLabel
+                id={roleLabelId}
+                htmlFor={roleTriggerId}
+                className="text-xs font-medium"
+              >
                 {en.workspace.invite.dialog.roleLabel}
               </FieldLabel>
               <Controller
@@ -243,10 +264,16 @@ export function InviteMemberDialog({
                     }}
                     disabled={createInviteMutation.isPending}
                   >
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger
+                      id={roleTriggerId}
+                      aria-labelledby={roleLabelId}
+                      aria-invalid={!!form.formState.errors.role}
+                      aria-describedby={form.formState.errors.role ? roleErrorId : undefined}
+                      className="w-full h-9 rounded-lg text-xs"
+                    >
                       <SelectValue placeholder={en.workspace.invite.dialog.rolePlaceholder} />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="rounded-xl">
                       <SelectItem value="MEMBER">
                         <div className="flex flex-col text-left py-0.5">
                           <span className="font-medium text-xs">
@@ -271,7 +298,7 @@ export function InviteMemberDialog({
                   </Select>
                 )}
               />
-              <FieldError>
+              <FieldError id={roleErrorId}>
                 {form.formState.errors.role?.message}
               </FieldError>
             </Field>

@@ -20,6 +20,7 @@ export function ViewSelector({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const tabRefs = React.useRef<Record<string, HTMLButtonElement | null>>({});
 
   const handleSelectView = (view: TaskView) => {
     onViewChange(view);
@@ -28,33 +29,70 @@ export function ViewSelector({
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
+  const handleKeyDown = (
+    e: React.KeyboardEvent<HTMLButtonElement>,
+    index: number
+  ) => {
+    let targetIndex: number | null = null;
+
+    if (e.key === "ArrowRight") {
+      targetIndex = (index + 1) % TASK_VIEWS.length;
+    } else if (e.key === "ArrowLeft") {
+      targetIndex = (index - 1 + TASK_VIEWS.length) % TASK_VIEWS.length;
+    } else if (e.key === "Home") {
+      targetIndex = 0;
+    } else if (e.key === "End") {
+      targetIndex = TASK_VIEWS.length - 1;
+    }
+
+    if (targetIndex !== null) {
+      e.preventDefault();
+      const targetView = TASK_VIEWS[targetIndex];
+      tabRefs.current[targetView.id]?.focus();
+      handleSelectView(targetView.id);
+    }
+  };
+
   return (
     <div
       className={cn(
-        "inline-flex items-center p-1 rounded-xl bg-muted/60 border border-border/60 shadow-2xs gap-1",
+        "inline-flex items-center h-8 p-0.5 rounded-lg bg-muted/60 border border-input gap-0.5",
         className
       )}
       role="tablist"
       aria-label="Task Views"
     >
-      {TASK_VIEWS.map((v) => {
+      {TASK_VIEWS.map((v, index) => {
         const Icon = v.icon;
         const isActive = currentView === v.id;
         return (
           <button
             key={v.id}
+            ref={(el) => {
+              tabRefs.current[v.id] = el;
+            }}
+            id={`view-tab-${v.id}`}
             type="button"
             role="tab"
+            tabIndex={isActive ? 0 : -1}
             aria-selected={isActive}
+            aria-controls={`view-panel-${v.id}`}
             onClick={() => handleSelectView(v.id)}
+            onKeyDown={(e) => handleKeyDown(e, index)}
             className={cn(
-              "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 cursor-pointer select-none",
+              "inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md text-xs font-medium transition-colors duration-150 cursor-pointer select-none whitespace-nowrap focus-visible:outline-2 focus-visible:outline-ring",
               isActive
-                ? "bg-background text-foreground shadow-2xs font-semibold ring-1 ring-border/50"
+                ? "bg-background text-foreground shadow-2xs ring-1 ring-border/70"
                 : "text-muted-foreground hover:text-foreground hover:bg-background/40"
             )}
           >
-            <Icon className={cn("size-3.5", isActive ? "text-primary" : "opacity-70")} />
+            <Icon
+              aria-hidden="true"
+              className={cn(
+                "size-3.5 shrink-0",
+                isActive ? "text-brand-text" : "text-muted-foreground"
+              )}
+            />
             <span>{v.label}</span>
           </button>
         );

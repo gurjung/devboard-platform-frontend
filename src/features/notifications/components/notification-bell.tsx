@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useId } from "react";
 import { useRouter } from "next/navigation";
 import {
   Bell,
@@ -15,7 +15,6 @@ import {
 } from "lucide-react";
 import { formatDistanceToNowStrict } from "date-fns";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   useNotifications,
@@ -29,32 +28,32 @@ const getNotificationIcon = (type: NotificationType) => {
   switch (type) {
     case "TASK_ASSIGNED":
       return (
-        <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
-          <CheckSquare className="size-4" />
+        <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20">
+          <CheckSquare className="size-4" aria-hidden="true" />
         </div>
       );
     case "TASK_STATUS_CHANGED":
       return (
-        <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-          <ArrowRightCircle className="size-4" />
+        <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
+          <ArrowRightCircle className="size-4" aria-hidden="true" />
         </div>
       );
     case "MEMBER_ROLE_UPDATED":
       return (
-        <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-          <ShieldCheck className="size-4" />
+        <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
+          <ShieldCheck className="size-4" aria-hidden="true" />
         </div>
       );
     case "PROJECT_CREATED":
       return (
-        <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
-          <FolderPlus className="size-4" />
+        <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20">
+          <FolderPlus className="size-4" aria-hidden="true" />
         </div>
       );
     default:
       return (
         <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-muted text-foreground border border-border">
-          <Bell className="size-4" />
+          <Bell className="size-4" aria-hidden="true" />
         </div>
       );
   }
@@ -65,6 +64,10 @@ export function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"all" | "unread">("all");
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const panelHeadingId = useId();
+  const panelId = useId();
 
   const { data, isLoading } = useNotifications();
   const markAsReadMutation = useMarkNotificationAsRead();
@@ -80,7 +83,15 @@ export function NotificationBell() {
       ? notifications.filter((n) => !n.isRead)
       : notifications;
 
-  // Close on outside click
+  useEffect(() => {
+    if (!isOpen) return;
+    const frameId = requestAnimationFrame(() => {
+      panelRef.current?.focus();
+    });
+    return () => cancelAnimationFrame(frameId);
+  }, [isOpen]);
+
+  // Close on outside click or Escape
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -94,6 +105,9 @@ export function NotificationBell() {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
         setIsOpen(false);
+        requestAnimationFrame(() => {
+          triggerRef.current?.focus();
+        });
       }
     }
 
@@ -133,20 +147,29 @@ export function NotificationBell() {
     <div className="relative inline-block" ref={containerRef}>
       {/* Bell Trigger Button */}
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
         className={cn(
-          "relative flex size-9 items-center justify-center rounded-xl border border-transparent transition-all cursor-pointer outline-none hover:bg-muted/80 focus-visible:ring-2 focus-visible:ring-ring",
-          isOpen && "bg-muted border-border"
+          "relative flex size-8 items-center justify-center rounded-md border border-transparent transition-colors cursor-pointer outline-none text-muted-foreground hover:text-foreground hover:bg-muted/70 focus-visible:ring-2 focus-visible:ring-ring",
+          isOpen && "bg-muted border-border text-foreground"
         )}
-        aria-label="Notifications"
-        title="Notifications"
+        aria-label={
+          unreadCount > 0
+            ? `Notifications (${unreadCount} unread)`
+            : "Notifications"
+        }
+        aria-expanded={isOpen}
+        aria-controls={panelId}
       >
-        <Bell className="size-4.5 text-foreground/80 transition-transform active:scale-95" />
+        <Bell className="size-4 transition-transform active:scale-95" aria-hidden="true" />
 
         {/* Live Unread Badge */}
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-4.5 h-4.5 px-1 rounded-full bg-red-600 text-white text-[10px] font-bold shadow-xs">
+          <span
+            aria-hidden="true"
+            className="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-4 h-4 px-1 rounded-full bg-red-600 text-white text-[9px] font-bold shadow-xs"
+          >
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-60" />
             <span className="relative">
               {unreadCount > 99 ? "99+" : unreadCount}
@@ -155,17 +178,26 @@ export function NotificationBell() {
         )}
       </button>
 
-      {/* Flyout Panel (Jira-style) */}
+      {/* Flyout Panel */}
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2.5 w-[340px] sm:w-[400px] rounded-2xl bg-popover text-popover-foreground border border-border/80 shadow-2xl z-50 overflow-hidden animate-in fade-in-0 zoom-in-95 duration-150">
+        <div
+          id={panelId}
+          ref={panelRef}
+          tabIndex={-1}
+          role="dialog"
+          aria-labelledby={panelHeadingId}
+          className="absolute right-0 top-full mt-2 w-[330px] sm:w-[390px] rounded-xl bg-popover text-popover-foreground border border-border shadow-2xl z-50 overflow-hidden outline-none animate-in fade-in-0 zoom-in-95 duration-150"
+        >
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-border/60 bg-muted/30">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 bg-muted/30">
             <div className="flex items-center gap-2">
-              <h3 className="font-bold text-sm tracking-tight">Notifications</h3>
+              <h2 id={panelHeadingId} className="font-bold text-sm tracking-tight">
+                Notifications
+              </h2>
               {unreadCount > 0 && (
                 <Badge
                   variant="secondary"
-                  className="px-1.5 py-0.5 text-[10px] font-bold bg-primary/10 text-primary border-primary/20"
+                  className="px-1.5 py-0.5 text-[10px] font-bold bg-primary/10 text-brand-text border-primary/20"
                 >
                   {unreadCount} new
                 </Badge>
@@ -177,10 +209,9 @@ export function NotificationBell() {
                 type="button"
                 onClick={handleMarkAllRead}
                 disabled={markAllAsReadMutation.isPending}
-                className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer disabled:opacity-50"
-                title="Mark all as read"
+                className="flex items-center gap-1 min-h-6 px-1.5 rounded text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer disabled:opacity-50"
               >
-                <CheckCheck className="size-3.5" />
+                <CheckCheck className="size-3.5" aria-hidden="true" />
                 <span>Mark all read</span>
               </button>
             )}
@@ -190,9 +221,10 @@ export function NotificationBell() {
           <div className="flex items-center gap-1 px-4 py-2 border-b border-border/50 bg-background/50">
             <button
               type="button"
+              aria-pressed={activeTab === "all"}
               onClick={() => setActiveTab("all")}
               className={cn(
-                "px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors cursor-pointer",
+                "px-2.5 py-1 min-h-7 rounded-lg text-xs font-semibold transition-colors cursor-pointer",
                 activeTab === "all"
                   ? "bg-secondary text-secondary-foreground"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
@@ -202,9 +234,10 @@ export function NotificationBell() {
             </button>
             <button
               type="button"
+              aria-pressed={activeTab === "unread"}
               onClick={() => setActiveTab("unread")}
               className={cn(
-                "px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors cursor-pointer",
+                "px-2.5 py-1 min-h-7 rounded-lg text-xs font-semibold transition-colors cursor-pointer",
                 activeTab === "unread"
                   ? "bg-secondary text-secondary-foreground"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
@@ -215,7 +248,7 @@ export function NotificationBell() {
           </div>
 
           {/* Notifications Feed */}
-          <div className="max-h-[380px] overflow-y-auto divide-y divide-border/30">
+          <div className="max-h-[380px] overflow-y-auto">
             {isLoading ? (
               <div className="py-12 text-center text-xs text-muted-foreground">
                 Loading notifications...
@@ -223,7 +256,7 @@ export function NotificationBell() {
             ) : displayedNotifications.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
                 <div className="flex size-11 items-center justify-center rounded-full bg-muted/60 text-muted-foreground mb-2.5">
-                  <Sparkles className="size-5 text-amber-500" />
+                  <Sparkles className="size-5 text-amber-700 dark:text-amber-400" aria-hidden="true" />
                 </div>
                 <p className="text-xs font-bold text-foreground">
                   {activeTab === "unread"
@@ -237,61 +270,71 @@ export function NotificationBell() {
                 </p>
               </div>
             ) : (
-              displayedNotifications.map((notification) => {
-                const formattedTime = formatDistanceToNowStrict(
-                  new Date(notification.createdAt),
-                  { addSuffix: true }
-                );
+              <ul className="divide-y divide-border/35">
+                {displayedNotifications.map((notification) => {
+                  const formattedTime = formatDistanceToNowStrict(
+                    new Date(notification.createdAt),
+                    { addSuffix: true }
+                  );
 
-                return (
-                  <div
-                    key={notification.id}
-                    onClick={() => handleNotificationClick(notification)}
-                    className={cn(
-                      "group relative flex items-start gap-3 p-3.5 transition-colors cursor-pointer hover:bg-muted/50",
-                      !notification.isRead && "bg-primary/5 hover:bg-primary/10"
-                    )}
-                  >
-                    {/* Event Type Icon */}
-                    {getNotificationIcon(notification.type)}
-
-                    {/* Content */}
-                    <div className="flex-1 min-w-0 pr-4">
-                      <div className="flex items-center gap-1.5 mb-0.5">
-                        <span className="font-semibold text-xs text-foreground truncate">
-                          {notification.title}
-                        </span>
-                        {!notification.isRead && (
-                          <span className="size-1.5 rounded-full bg-blue-600 dark:bg-blue-400 shrink-0" />
-                        )}
-                      </div>
-                      <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-                        {notification.message}
-                      </p>
-                      <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground/75 mt-1">
-                        <Clock className="size-3" />
-                        <span>{formattedTime}</span>
-                        {notification.actor?.name && (
-                          <>
-                            <span>•</span>
-                            <span>{notification.actor.name}</span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Delete Action on Hover */}
-                    <button
-                      type="button"
-                      onClick={(e) => handleDelete(e, notification.id)}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md text-muted-foreground hover:text-red-600 hover:bg-red-500/10 cursor-pointer"
-                      title="Delete"
+                  return (
+                    <li
+                      key={notification.id}
+                      className={cn(
+                        "group relative flex items-start transition-colors hover:bg-muted/50",
+                        !notification.isRead && "bg-primary/5 hover:bg-primary/10"
+                      )}
                     >
-                      <Trash2 className="size-3.5" />
-                    </button>
-                  </div>
-                );
-              })
+                      <button
+                        type="button"
+                        onClick={() => handleNotificationClick(notification)}
+                        className="flex flex-1 min-w-0 items-start gap-3 p-3.5 pr-11 text-left cursor-pointer focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
+                      >
+                        {/* Event Type Icon */}
+                        {getNotificationIcon(notification.type)}
+
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            <span className="font-semibold text-xs text-foreground truncate">
+                              {notification.title}
+                            </span>
+                            {!notification.isRead && (
+                              <span
+                                aria-label="Unread"
+                                className="size-1.5 rounded-full bg-blue-600 dark:bg-blue-400 shrink-0"
+                              />
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                            {notification.message}
+                          </p>
+                          <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground mt-1">
+                            <Clock className="size-3" aria-hidden="true" />
+                            <span>{formattedTime}</span>
+                            {notification.actor?.name && (
+                              <>
+                                <span aria-hidden="true">•</span>
+                                <span>{notification.actor.name}</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </button>
+
+                      {/* Delete Action on Hover / Focus */}
+                      <button
+                        type="button"
+                        onClick={(e) => handleDelete(e, notification.id)}
+                        className="absolute top-3 right-2.5 flex size-6 items-center justify-center rounded-md opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 transition-opacity text-muted-foreground hover:text-destructive-text hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-ring outline-none cursor-pointer"
+                        aria-label={`Delete notification: ${notification.title}`}
+                      >
+                        <Trash2 className="size-3.5" aria-hidden="true" />
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
             )}
           </div>
         </div>

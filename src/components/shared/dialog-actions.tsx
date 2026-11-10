@@ -28,20 +28,20 @@ export function DialogActions({
     : completeLabel;
 
   return (
-    <DialogFooter className="flex flex-row items-center justify-between gap-3 w-full sm:justify-between pt-2">
+    <DialogFooter className="flex flex-row items-center justify-end gap-2 w-full sm:justify-end pt-3 border-t border-border/60">
       <Button
         type="button"
-        variant="outline"
+        variant="ghost"
         onClick={onCancel}
         disabled={isCompleteLoading}
-        className="h-9 text-xs rounded-xl px-4 cursor-pointer"
+        className="h-8 text-xs rounded-lg px-3.5 cursor-pointer"
       >
         {cancelLabel}
       </Button>
       <Button
         type="submit"
         disabled={isCompleteDisabled || isCompleteLoading}
-        className="h-9 text-xs rounded-xl px-4 cursor-pointer"
+        className="h-8 text-xs rounded-lg px-3.5 cursor-pointer font-medium"
       >
         {showLoadingState && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
         {label}

@@ -2,8 +2,7 @@
 
 import * as React from "react";
 import { useParams, useRouter } from "next/navigation";
-import { RiAddCircleFill } from "react-icons/ri";
-import { FolderKanban } from "lucide-react";
+import { Plus, FolderKanban } from "lucide-react";
 import { en } from "@/locales/en";
 
 import {
@@ -67,11 +66,10 @@ export function ProjectSwitcher() {
           >
             <button
               type="button"
-              className="text-muted-foreground hover:text-foreground hover:opacity-75 transition cursor-pointer outline-none"
-              title={en.project.switcher.createTooltip}
+              className="size-6 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/70 transition cursor-pointer focus-visible:ring-2 focus-visible:ring-ring outline-none"
               aria-label={en.project.switcher.createTooltip}
             >
-              <RiAddCircleFill className="size-5" />
+              <Plus className="size-3.5" aria-hidden="true" />
             </button>
           </CreateProjectDialog>
         )}
@@ -82,7 +80,10 @@ export function ProjectSwitcher() {
         onValueChange={handleValueChange}
         disabled={isLoading || !projects || projects.length === 0}
       >
-        <SelectTrigger className="h-11 w-full px-2.5 py-2 bg-background hover:bg-accent/60 border border-border/80 shadow-2xs transition-all duration-200 rounded-xl focus:ring-2 focus:ring-primary/20 hover:border-border">
+        <SelectTrigger
+          aria-label={en.project.switcher.sectionTitle}
+          className="h-11 w-full px-2.5 py-2 bg-background hover:bg-accent/60 border border-input shadow-2xs transition-all duration-200 rounded-xl focus:ring-2 focus:ring-ring/30 hover:border-border"
+        >
           <SelectValue
             placeholder={
               isLoading
@@ -102,19 +103,19 @@ export function ProjectSwitcher() {
                   <span className="truncate text-xs font-semibold text-foreground tracking-tight">
                     {currentProject.name}
                   </span>
-                  <span className="text-[10px] text-muted-foreground/80 font-medium">
+                  <span className="text-[10px] text-muted-foreground font-medium">
                     Project
                   </span>
                 </div>
               </div>
             ) : projects && projects.length > 0 ? (
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <FolderKanban className="size-4 opacity-70" />
+                <FolderKanban className="size-4 text-muted-foreground" aria-hidden="true" />
                 <span>{en.project.switcher.selectPlaceholder}</span>
               </div>
             ) : (
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <FolderKanban className="size-4 opacity-50" />
+                <FolderKanban className="size-4 text-muted-foreground" aria-hidden="true" />
                 <span>{en.project.switcher.noProjects}</span>
               </div>
             )}
@@ -124,7 +125,7 @@ export function ProjectSwitcher() {
           align="start"
           side="bottom"
           alignItemWithTrigger={false}
-          className="w-(--anchor-width) min-w-56 p-1 rounded-xl shadow-xl border-border/80"
+          className="w-(--anchor-width) min-w-56 p-1 rounded-xl shadow-xl border-border"
         >
           <SelectGroup>
             {projects?.map((project) => (
@@ -144,7 +145,7 @@ export function ProjectSwitcher() {
                     <span className="truncate text-xs font-medium text-foreground">
                       {project.name}
                     </span>
-                    <span className="text-[10px] text-muted-foreground/80 font-normal">
+                    <span className="text-[10px] text-muted-foreground font-normal">
                       Project
                     </span>
                   </div>

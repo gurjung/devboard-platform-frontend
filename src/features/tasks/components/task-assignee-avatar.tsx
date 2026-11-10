@@ -35,7 +35,7 @@ export function TaskAssigneeAvatar({
             size === "default" && "size-7"
           )}
         >
-          <User className={cn(size === "xs" ? "size-3" : "size-3.5", "opacity-60")} />
+          <User className={cn(size === "xs" ? "size-3" : "size-3.5", "text-muted-foreground")} />
         </div>
         {showName && (
           <span className="text-xs text-muted-foreground italic">Unassigned</span>
@@ -74,7 +74,7 @@ export function TaskAssigneeAvatar({
         {assignee.image && (
           <AvatarImage src={assignee.image} alt={displayName} />
         )}
-        <AvatarFallback className="font-semibold bg-primary/10 text-primary">
+        <AvatarFallback className="font-semibold bg-primary/15 text-brand-text">
           {initials}
         </AvatarFallback>
       </Avatar>

@@ -1,9 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { useState, useRef } from "react";
+import { useId, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import imageCompression from "browser-image-compression";
 import { toast } from "sonner";
@@ -51,6 +51,10 @@ export function CreateProjectDialog({
 
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const nameId = useId();
+  const nameErrorId = useId();
+  const logoTriggerId = useId();
+  const logoHintId = useId();
 
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -145,8 +149,9 @@ export function CreateProjectDialog({
       try {
         setIsUploading(true);
         finalLogoUrl = await uploadWorkspaceLogo(logoFile);
-      } catch (err: any) {
-        toast.error(err?.message || "Failed to upload project logo.");
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : "Failed to upload project logo.";
+        toast.error(msg);
         setIsUploading(false);
         return;
       } finally {
@@ -190,24 +195,35 @@ export function CreateProjectDialog({
         )
       }
     >
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-2">
+      <form
+        onSubmit={(e) => {
+          void form.handleSubmit(onSubmit)(e);
+        }}
+        noValidate
+        className="space-y-4 py-2"
+      >
         <FieldGroup className="space-y-4">
           <Field invalid={!!form.formState.errors.name}>
-            <FieldLabel className="text-xs font-semibold">
+            <FieldLabel htmlFor={nameId} className="text-xs font-semibold">
               {en.project.createDialog.nameLabel}
             </FieldLabel>
             <Input
+              id={nameId}
               placeholder={en.project.createDialog.namePlaceholder}
               disabled={isSubmitting}
+              aria-invalid={!!form.formState.errors.name}
+              aria-describedby={form.formState.errors.name ? nameErrorId : undefined}
               autoFocus
               {...form.register("name")}
             />
-            <FieldError>{form.formState.errors.name?.message}</FieldError>
+            <FieldError id={nameErrorId}>
+              {form.formState.errors.name?.message}
+            </FieldError>
           </Field>
 
           {/* Optional Project Logo */}
           <Field>
-            <FieldLabel className="text-xs font-semibold">
+            <FieldLabel htmlFor={logoTriggerId} className="text-xs font-semibold">
               {en.project.createDialog.logoLabel}{" "}
               <span className="font-normal text-muted-foreground">
                 {en.project.createDialog.logoOptional}
@@ -218,30 +234,34 @@ export function CreateProjectDialog({
               type="file"
               accept="image/png,image/jpeg"
               className="hidden"
+              tabIndex={-1}
+              aria-hidden="true"
               onChange={handleFileChange}
               disabled={isSubmitting}
             />
 
-            <div className="flex items-center gap-4 mt-1">
-              <Avatar className="size-14 rounded-xl border border-border/80">
-                <AvatarImage src={previewUrl || undefined} className="object-cover" />
-                <AvatarFallback className="rounded-xl bg-muted text-muted-foreground">
+            <div className="flex items-center gap-3.5 p-3 rounded-lg border border-dashed border-border bg-muted/20">
+              <Avatar className="size-12 rounded-lg border border-border/80 shrink-0">
+                <AvatarImage src={previewUrl || undefined} alt="" className="object-cover" />
+                <AvatarFallback className="rounded-lg bg-muted text-muted-foreground">
                   {isCompressing ? (
-                    <Loader2 className="size-5 animate-spin" />
+                    <Loader2 className="size-4 animate-spin" />
                   ) : (
-                    <ImageIcon className="size-5" />
+                    <ImageIcon className="size-4" />
                   )}
                 </AvatarFallback>
               </Avatar>
 
-              <div className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-2">
                   <Button
+                    id={logoTriggerId}
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="h-8 text-xs cursor-pointer"
+                    className="h-8 text-xs px-3 rounded-lg cursor-pointer"
                     disabled={isSubmitting}
+                    aria-describedby={logoHintId}
                     onClick={() => fileInputRef.current?.click()}
                   >
                     <Upload className="size-3.5 mr-1.5" />
@@ -255,7 +275,7 @@ export function CreateProjectDialog({
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="h-8 text-xs text-destructive hover:bg-destructive/10 cursor-pointer"
+                      className="h-8 text-xs text-destructive-text hover:bg-destructive/10 hover:text-destructive-text rounded-lg cursor-pointer"
                       disabled={isSubmitting}
                       onClick={handleRemoveLogo}
                     >
@@ -264,7 +284,7 @@ export function CreateProjectDialog({
                     </Button>
                   )}
                 </div>
-                <span className="text-[10px] text-muted-foreground">
+                <span id={logoHintId} className="text-[11px] text-muted-foreground">
                   {en.project.createDialog.logoHint}
                 </span>
               </div>

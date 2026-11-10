@@ -1,16 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { en } from "@/locales/en";
 import { usePathname, useParams } from "next/navigation";
-import {
-  GoHome,
-  GoHomeFill,
-  GoCheckCircle,
-  GoCheckCircleFill,
-  GoGear,
-  GoPeople,
-} from "react-icons/go";
+import { Home, CheckCircle2, Settings, Users } from "lucide-react";
+import { en } from "@/locales/en";
 import { cn } from "@/lib/utils";
 
 interface NavigationProps {
@@ -26,38 +19,34 @@ export function Navigation({ onNavigate }: NavigationProps) {
     {
       label: en.dashboard.navigation.home,
       href: workspaceSlug ? `/dashboard/${workspaceSlug}` : "/dashboard",
-      icon: GoHome,
-      activeIcon: GoHomeFill,
+      icon: Home,
     },
     {
       label: en.dashboard.navigation.myTasks,
       href: workspaceSlug
         ? `/dashboard/${workspaceSlug}/my-tasks`
         : "/dashboard/my-tasks",
-      icon: GoCheckCircle,
-      activeIcon: GoCheckCircleFill,
+      icon: CheckCircle2,
     },
     {
       label: en.dashboard.navigation.settings,
       href: workspaceSlug
         ? `/dashboard/${workspaceSlug}/settings`
         : "/dashboard/settings",
-      icon: GoGear,
-      activeIcon: GoGear,
+      icon: Settings,
     },
     {
       label: en.dashboard.navigation.members,
       href: workspaceSlug
         ? `/dashboard/${workspaceSlug}/members`
         : "/dashboard/members",
-      icon: GoPeople,
-      activeIcon: GoPeople,
+      icon: Users,
     },
   ];
 
   return (
-    <div className="flex flex-col gap-y-4">
-      <ul className="flex flex-col gap-y-1">
+    <nav aria-label="Workspace sections" className="flex flex-col">
+      <ul className="flex flex-col gap-0.5">
         {routes.map((item) => {
           const isActive =
             pathname === item.href ||
@@ -66,7 +55,7 @@ export function Navigation({ onNavigate }: NavigationProps) {
               pathname.startsWith(item.href) &&
               !pathname.includes("/projects/"));
 
-          const Icon = isActive ? item.activeIcon : item.icon;
+          const Icon = item.icon;
 
           return (
             <li key={item.href}>
@@ -78,22 +67,26 @@ export function Navigation({ onNavigate }: NavigationProps) {
                   }
                   onNavigate?.();
                 }}
+                aria-current={isActive ? "page" : undefined}
+                className={cn(
+                  "flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors",
+                  isActive
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-2xs"
+                    : "text-muted-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent/55"
+                )}
               >
-                <div
+                <Icon
                   className={cn(
-                    "flex items-center gap-2.5 p-2.5 rounded-md font-medium hover:text-primary transition text-muted-foreground",
-                    isActive &&
-                      "bg-background shadow-xs hover:opacity-100 text-primary"
+                    "size-4 shrink-0",
+                    isActive ? "text-brand-text" : "text-muted-foreground"
                   )}
-                >
-                  <Icon className="size-5" />
-                  {item.label}
-                </div>
+                />
+                <span>{item.label}</span>
               </Link>
             </li>
           );
         })}
       </ul>
-    </div>
+    </nav>
   );
 }

@@ -40,7 +40,7 @@ export function KanbanSimulationRibbon() {
               <span className="text-xs font-bold text-foreground">
                 DevBoard Product Walkthrough Lab
               </span>
-              <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-bold border-primary text-primary">
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-bold border-primary text-brand-text">
                 Interactive Tour
               </Badge>
             </div>
@@ -67,7 +67,7 @@ export function KanbanSimulationRibbon() {
             onClick={() => runScenario("happy-path-sprint")}
             className="cursor-pointer gap-1.5 text-xs font-semibold border-border hover:bg-accent"
           >
-            <Play className="size-3.5 fill-current text-primary" />
+            <Play className="size-3.5 fill-current text-brand-text" />
             Sprint Lifecycle
           </Button>
 
@@ -75,9 +75,9 @@ export function KanbanSimulationRibbon() {
             variant="outline"
             size="sm"
             onClick={() => runScenario("fault-optimistic-rollback")}
-            className="cursor-pointer gap-1.5 text-xs font-semibold border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
+            className="cursor-pointer gap-1.5 text-xs font-semibold border-destructive/40 hover:bg-destructive/10 hover:text-destructive-text"
           >
-            <Flame className="size-3.5 text-destructive" />
+            <Flame className="size-3.5 text-destructive-text" />
             Server Crash Rollback
           </Button>
 

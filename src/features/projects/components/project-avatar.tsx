@@ -31,7 +31,7 @@ export function ProjectAvatar({
       <AvatarImage src={image || undefined} alt={name} className="object-cover" />
       <AvatarFallback
         className={cn(
-          "rounded-md bg-primary/10 text-primary font-semibold text-xs",
+          "rounded-md bg-primary/10 text-brand-text font-semibold text-xs",
           fallbackClassName
         )}
       >

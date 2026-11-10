@@ -46,10 +46,10 @@ export default function WorkspaceMembersPage() {
   const canInvite = role === "OWNER" || role === "ADMIN";
 
   return (
-    <div className="flex flex-col gap-6 max-w-4xl mx-auto py-4">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/60 pb-5">
+    <div className="flex flex-col gap-5 max-w-4xl mx-auto py-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/70 pb-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">
+          <h1 className="text-xl font-semibold tracking-tight text-foreground">
             {en.workspace.members.pageTitle}
           </h1>
           <p className="text-xs text-muted-foreground mt-1">

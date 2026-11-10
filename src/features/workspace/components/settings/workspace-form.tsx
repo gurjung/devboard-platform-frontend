@@ -1,15 +1,15 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useId, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { en } from "@/locales/en";
 import { useAuth } from "@/features/auth/context/auth-context";
-import { apiClient } from "@/lib/api-client";
 import { uploadWorkspaceLogo } from "@/lib/supabase";
+import type { Workspace } from "../../types";
 
 import {
   Card,
@@ -45,7 +45,7 @@ interface WorkspaceFormProps {
   };
   mode?: "create" | "edit";
   onCancel?: () => void;
-  onSuccess?: (workspace: any) => void;
+  onSuccess?: (workspace: Workspace) => void;
   onDelete?: () => Promise<void> | void;
   isDeleting?: boolean;
 }
@@ -60,6 +60,8 @@ export function WorkspaceForm({
 }: WorkspaceFormProps) {
   const router = useRouter();
   const { logout } = useAuth();
+  const nameId = useId();
+  const nameErrorId = useId();
 
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(
@@ -86,8 +88,8 @@ export function WorkspaceForm({
     createWorkspaceMutation.isPending ||
     updateWorkspaceMutation.isPending;
 
-  const watchedName = form.watch("name");
-  const watchedLogo = form.watch("logo");
+  const watchedName = useWatch({ control: form.control, name: "name" });
+  const watchedLogo = useWatch({ control: form.control, name: "logo" });
   const hasNameChanged =
     (watchedName || "").trim() !== (initialValues?.name || "").trim();
   const hasLogoChanged =
@@ -112,8 +114,9 @@ export function WorkspaceForm({
       try {
         setIsUploading(true);
         finalLogoUrl = await uploadWorkspaceLogo(logoFile);
-      } catch (err: any) {
-        toast.error(err?.message || "Failed to upload workspace logo.");
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : "Failed to upload workspace logo.";
+        toast.error(msg);
         setIsUploading(false);
         return;
       } finally {
@@ -182,25 +185,25 @@ export function WorkspaceForm({
   };
 
   return (
-    <div className="flex flex-col gap-6 w-full max-w-xl mx-auto">
-      <Card className="w-full rounded-2xl border border-border/80 shadow-md bg-card">
+    <div className="flex flex-col gap-5 w-full max-w-xl mx-auto">
+      <Card className="w-full rounded-xl border border-border/75 bg-card">
         {mode === "create" && (
           <>
-            <CardHeader className="flex flex-col items-center justify-center text-center p-6 pb-4">
-              <CardTitle className="text-xl font-bold text-foreground">
+            <CardHeader className="flex flex-col items-start text-left p-5 pb-3.5">
+              <CardTitle className="text-lg font-semibold text-foreground">
                 {en.workspace.form.createTitle}
               </CardTitle>
-              <CardDescription className="text-xs text-muted-foreground mt-1 text-center">
+              <CardDescription className="text-xs text-muted-foreground mt-1">
                 {en.workspace.form.createDescription}
               </CardDescription>
             </CardHeader>
-            <div className="px-6">
+            <div className="px-5">
               <Separator />
             </div>
           </>
         )}
 
-        <CardContent className="p-6">
+        <CardContent className="p-5">
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FieldGroup className="space-y-4">
               <Controller
@@ -208,18 +211,22 @@ export function WorkspaceForm({
                 name="name"
                 render={({ field, fieldState }) => (
                   <Field invalid={!!fieldState.error}>
-                    <FieldLabel className="text-xs font-semibold">
+                    <FieldLabel htmlFor={nameId} className="text-xs font-medium">
                       {en.workspace.form.nameLabel}
                     </FieldLabel>
                     <Input
+                      id={nameId}
                       type="text"
                       placeholder={en.workspace.form.namePlaceholder}
-                      className="w-full h-10 text-sm rounded-xl"
+                      className="w-full h-9 text-xs rounded-lg"
                       aria-invalid={!!fieldState.error}
+                      aria-describedby={fieldState.error ? nameErrorId : undefined}
                       disabled={isSubmitting}
                       {...field}
                     />
-                    <FieldError>{fieldState.error?.message}</FieldError>
+                    <FieldError id={nameErrorId}>
+                      {fieldState.error?.message}
+                    </FieldError>
                   </Field>
                 )}
               />
@@ -241,7 +248,7 @@ export function WorkspaceForm({
                 )}
               />
 
-              <div className="flex items-center justify-between pt-3 border-t border-border/80">
+              <div className="flex items-center justify-between pt-3.5 border-t border-border/70">
                 {onCancel ? (
                   <Button
                     type="button"
@@ -249,7 +256,7 @@ export function WorkspaceForm({
                     size="sm"
                     onClick={onCancel}
                     disabled={isSubmitting}
-                    className="cursor-pointer h-9 px-4 rounded-xl text-xs"
+                    className="cursor-pointer h-8 px-3.5 rounded-lg text-xs"
                   >
                     {en.workspace.form.cancelButton}
                   </Button>
@@ -260,7 +267,7 @@ export function WorkspaceForm({
                     size="sm"
                     onClick={handleReset}
                     disabled={!hasChanges || isSubmitting}
-                    className="cursor-pointer h-9 px-4 rounded-xl text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="cursor-pointer h-8 px-3.5 rounded-lg text-xs disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {en.workspace.form.cancelButton}
                   </Button>
@@ -271,7 +278,7 @@ export function WorkspaceForm({
                     size="sm"
                     onClick={handleSignOut}
                     disabled={isSubmitting}
-                    className="text-muted-foreground hover:text-foreground cursor-pointer text-xs h-9"
+                    className="text-muted-foreground hover:text-foreground cursor-pointer text-xs h-8 rounded-lg"
                   >
                     {en.workspace.form.signOutButton}
                   </Button>
@@ -282,12 +289,12 @@ export function WorkspaceForm({
                 <Button
                   type="submit"
                   size="sm"
-                  className="cursor-pointer h-9 px-4 rounded-xl text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="cursor-pointer h-8 px-3.5 rounded-lg text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={isSubmitting || (mode === "edit" && !hasChanges)}
                 >
                   {isSubmitting ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <Loader2 className="mr-1.5 size-3.5 animate-spin" />
                       {mode === "create"
                         ? en.workspace.form.creatingButton
                         : en.workspace.form.savingButton}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useSyncExternalStore } from "react";
 import { Sun, Moon, Check } from "lucide-react";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
@@ -11,31 +11,33 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+const emptySubscribe = () => () => {};
+
 export function ThemeToggle() {
   const { setTheme, resolvedTheme, theme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false
+  );
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        className="size-9 flex items-center justify-center cursor-pointer rounded-full outline-none hover:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        className="size-8 flex items-center justify-center cursor-pointer rounded-md outline-none text-muted-foreground hover:text-foreground hover:bg-muted/70 focus-visible:ring-2 focus-visible:ring-ring transition-colors"
         aria-label="Toggle theme"
       >
         {!mounted ? (
           <div className="size-4" />
         ) : resolvedTheme === "dark" ? (
-          <Moon className="size-4 text-foreground" />
+          <Moon className="size-4" />
         ) : (
-          <Sun className="size-4 text-foreground" />
+          <Sun className="size-4" />
         )}
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
-        className="p-1 rounded-xl shadow-md border border-border/85 min-w-[140px]"
+        className="p-1 rounded-xl shadow-md border border-border min-w-[136px]"
       >
         <DropdownMenuItem
           className={cn(
@@ -48,7 +50,7 @@ export function ThemeToggle() {
         >
           <span>Light</span>
           {mounted && theme === "light" && (
-            <Check className="size-3.5 text-primary ml-2" />
+            <Check className="size-3.5 text-brand-text ml-2" />
           )}
         </DropdownMenuItem>
         <DropdownMenuItem
@@ -62,7 +64,7 @@ export function ThemeToggle() {
         >
           <span>Dark</span>
           {mounted && theme === "dark" && (
-            <Check className="size-3.5 text-primary ml-2" />
+            <Check className="size-3.5 text-brand-text ml-2" />
           )}
         </DropdownMenuItem>
         <DropdownMenuItem
@@ -76,7 +78,7 @@ export function ThemeToggle() {
         >
           <span>System</span>
           {mounted && theme === "system" && (
-            <Check className="size-3.5 text-primary ml-2" />
+            <Check className="size-3.5 text-brand-text ml-2" />
           )}
         </DropdownMenuItem>
       </DropdownMenuContent>

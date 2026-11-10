@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { HiArrowRightOnRectangle } from "react-icons/hi2";
+import { LogOut } from "lucide-react";
 import { en } from "@/locales/en";
 import { useAuth } from "@/features/auth/context/auth-context";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -51,42 +51,47 @@ export function UserButton({ user: propUser }: UserButtonProps) {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="relative size-9 rounded-full cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-        <Avatar className="size-9 cursor-pointer">
+      <DropdownMenuTrigger
+        className="relative size-8 rounded-full cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        aria-label="User menu"
+      >
+        <Avatar className="size-8 cursor-pointer">
           {user?.image && (
             <AvatarImage src={user.image} alt={user.name || "User"} />
           )}
-          <AvatarFallback className="font-medium cursor-pointer">
+          <AvatarFallback className="text-xs font-semibold bg-primary/15 text-brand-text cursor-pointer">
             {initials}
           </AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-60 p-4">
-        <div className="flex flex-col items-center justify-center text-center">
-          <Avatar className="size-14 mb-2">
+      <DropdownMenuContent align="end" className="w-56 p-3 rounded-xl">
+        <div className="flex flex-col items-center justify-center text-center py-1">
+          <Avatar className="size-11 mb-2">
             {user?.image && (
               <AvatarImage src={user.image} alt={user.name || "User"} />
             )}
-            <AvatarFallback className="text-base font-semibold">
+            <AvatarFallback className="text-sm font-semibold bg-primary/15 text-brand-text">
               {initials}
             </AvatarFallback>
           </Avatar>
           {user?.name && (
-            <p className="text-sm font-semibold leading-tight">{user.name}</p>
+            <p className="text-xs font-semibold leading-tight text-foreground">
+              {user.name}
+            </p>
           )}
           {user?.email && (
-            <p className="text-xs text-muted-foreground truncate max-w-full mt-0.5">
+            <p className="text-[11px] text-muted-foreground truncate max-w-full mt-0.5">
               {user.email}
             </p>
           )}
         </div>
-        <DropdownMenuSeparator className="my-3" />
+        <DropdownMenuSeparator className="my-2.5" />
         <DropdownMenuItem
           variant="destructive"
           onClick={handleLogout}
-          className="cursor-pointer justify-center text-center w-full"
+          className="cursor-pointer justify-center text-center w-full text-xs rounded-md"
         >
-          <HiArrowRightOnRectangle className="size-4 mr-2" />
+          <LogOut className="size-3.5 mr-2" />
           <span>{en.dashboard.navbar.logOut}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>

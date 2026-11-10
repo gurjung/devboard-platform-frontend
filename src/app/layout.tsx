@@ -1,10 +1,11 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { AuthProvider } from "@/features/auth/context/auth-context";
 import { ThemeProvider } from "@/components/theme-provider";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import { SimulationProvider, SimulationFloatingDock } from "@/features/simulation";
 
@@ -23,6 +24,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "DevBoard - Modern Workspace & Project Management",
   description: "DevBoard is a full-stack project and workspace management platform.",
+};
+
+export const viewport: Viewport = {
+  colorScheme: "dark light",
 };
 
 export default function RootLayout({
@@ -48,15 +53,17 @@ export default function RootLayout({
           <QueryProvider>
             <ThemeProvider
               attribute="class"
-              defaultTheme="system"
+              defaultTheme="dark"
               enableSystem
               disableTransitionOnChange
             >
-              <SimulationProvider>
-                {children}
-                <SimulationFloatingDock />
-                <Toaster />
-              </SimulationProvider>
+              <TooltipProvider>
+                <SimulationProvider>
+                  {children}
+                  <SimulationFloatingDock />
+                  <Toaster />
+                </SimulationProvider>
+              </TooltipProvider>
             </ThemeProvider>
           </QueryProvider>
         </AuthProvider>

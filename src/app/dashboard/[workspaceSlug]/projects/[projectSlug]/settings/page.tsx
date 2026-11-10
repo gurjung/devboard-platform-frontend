@@ -49,7 +49,7 @@ export default function ProjectSettingsPage({ params }: ProjectSettingsPageProps
   if (isError || !project || !currentWorkspace) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] text-center p-4">
-        <h2 className="text-xl font-bold text-foreground">Project not found</h2>
+        <h1 className="text-xl font-bold text-foreground">Project not found</h1>
         <Button
           variant="outline"
           size="sm"
@@ -66,12 +66,12 @@ export default function ProjectSettingsPage({ params }: ProjectSettingsPageProps
   if (!canManage) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] text-center p-4">
-        <div className="size-14 rounded-full bg-destructive/10 text-destructive flex items-center justify-center mb-3">
-          <ShieldAlert className="size-7" />
+        <div className="size-14 rounded-full bg-destructive/10 text-destructive-text flex items-center justify-center mb-3">
+          <ShieldAlert className="size-7" aria-hidden="true" />
         </div>
-        <h2 className="text-xl font-bold text-foreground">
+        <h1 className="text-xl font-bold text-foreground">
           {en.project.settingsPage.accessDeniedTitle}
-        </h2>
+        </h1>
         <p className="text-xs text-muted-foreground mt-1 max-w-sm">
           {en.project.settingsPage.accessDeniedDescription}
         </p>
@@ -90,21 +90,30 @@ export default function ProjectSettingsPage({ params }: ProjectSettingsPageProps
   }
 
   return (
-    <div className="flex flex-col gap-6 max-w-xl mx-auto py-4">
-      <div className="text-center relative">
-        <Link
-          href={`/dashboard/${workspaceSlug}/projects/${project.slug}`}
-          className="absolute left-0 top-0.5 p-2 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground transition cursor-pointer"
-          title="Back to project"
+    <div className="flex flex-col gap-5 max-w-xl mx-auto py-3">
+      <div className="flex items-start gap-3 border-b border-border/50 pb-4">
+        <Button
+          variant="outline"
+          size="icon-sm"
+          nativeButton={false}
+          render={
+            <Link
+              href={`/dashboard/${workspaceSlug}/projects/${project.slug}`}
+            />
+          }
+          className="mt-0.5 rounded-lg shrink-0"
+          aria-label="Back to project"
         >
-          <ArrowLeft className="size-4" />
-        </Link>
-        <h1 className="text-2xl font-bold tracking-tight text-center">
-          {en.project.settingsPage.title}
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1 text-center">
-          {en.project.settingsPage.description}
-        </p>
+          <ArrowLeft className="size-3.5" />
+        </Button>
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight text-foreground">
+            {en.project.settingsPage.title}
+          </h1>
+          <p className="text-xs text-muted-foreground mt-1">
+            {en.project.settingsPage.description}
+          </p>
+        </div>
       </div>
 
       <TourSpotlightWrapper id="project-settings">

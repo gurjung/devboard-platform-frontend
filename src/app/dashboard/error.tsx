@@ -21,13 +21,13 @@ export default function DashboardError({ error, reset }: DashboardErrorProps) {
 
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center p-6 text-center">
-      <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-destructive/10 text-destructive mb-4 shadow-sm">
-        <AlertTriangle className="size-7" />
+      <div className="mx-auto flex size-12 items-center justify-center rounded-xl bg-destructive/10 text-destructive-text border border-destructive/20 mb-4">
+        <AlertTriangle className="size-6" aria-hidden="true" />
       </div>
 
-      <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+      <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
         Something went wrong in this workspace
-      </h2>
+      </h1>
 
       <p className="mt-2 max-w-md text-xs sm:text-sm text-muted-foreground">
         An unexpected runtime exception was caught by the resilience boundary.
@@ -61,15 +61,16 @@ export default function DashboardError({ error, reset }: DashboardErrorProps) {
       <div className="mt-8 max-w-lg w-full text-left">
         <button
           type="button"
+          aria-expanded={showDetails}
           onClick={() => setShowDetails(!showDetails)}
-          className="mx-auto flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer"
+          className="mx-auto flex items-center gap-1.5 min-h-6 px-2 rounded text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer"
         >
           <span>{showDetails ? "Hide technical diagnostic" : "View technical diagnostic"}</span>
-          {showDetails ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
+          {showDetails ? <ChevronUp className="size-3.5" aria-hidden="true" /> : <ChevronDown className="size-3.5" aria-hidden="true" />}
         </button>
 
         {showDetails && (
-          <div className="mt-3 rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-xs font-mono text-destructive">
+          <div className="mt-3 rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-xs font-mono text-destructive-text">
             <p className="font-bold mb-1">Error Message:</p>
             <p className="break-all">{error.message || "Unknown client runtime exception"}</p>
             {error.digest && (

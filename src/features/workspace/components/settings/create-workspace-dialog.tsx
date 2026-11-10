@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useState, useRef } from "react";
+import { useId, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -50,6 +50,11 @@ export function CreateWorkspaceDialog({
 
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const nameId = useId();
+  const nameErrorId = useId();
+  const logoTriggerId = useId();
+  const logoHintId = useId();
+  const logoErrorId = useId();
 
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -146,8 +151,9 @@ export function CreateWorkspaceDialog({
       try {
         setIsUploading(true);
         finalLogoUrl = await uploadWorkspaceLogo(logoFile);
-      } catch (err: any) {
-        toast.error(err?.message || "Failed to upload workspace logo.");
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : "Failed to upload workspace logo.";
+        toast.error(msg);
         setIsUploading(false);
         return;
       } finally {
@@ -184,23 +190,35 @@ export function CreateWorkspaceDialog({
         }
       }}
     >
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form
+        onSubmit={(e) => {
+          void form.handleSubmit(onSubmit)(e);
+        }}
+        noValidate
+        className="space-y-4"
+      >
         <FieldGroup>
           <Controller
             control={form.control}
             name="name"
             render={({ field, fieldState }) => (
               <Field invalid={!!fieldState.error}>
-                <FieldLabel>{en.workspace.createDialog.nameLabel}</FieldLabel>
+                <FieldLabel htmlFor={nameId}>
+                  {en.workspace.createDialog.nameLabel}
+                </FieldLabel>
                 <Input
+                  id={nameId}
                   type="text"
                   placeholder={en.workspace.createDialog.namePlaceholder}
                   className="w-full"
                   aria-invalid={!!fieldState.error}
+                  aria-describedby={fieldState.error ? nameErrorId : undefined}
                   disabled={isSubmitting}
                   {...field}
                 />
-                <FieldError>{fieldState.error?.message}</FieldError>
+                <FieldError id={nameErrorId}>
+                  {fieldState.error?.message}
+                </FieldError>
               </Field>
             )}
           />
@@ -210,7 +228,10 @@ export function CreateWorkspaceDialog({
             name="logo"
             render={({ fieldState }) => (
               <Field invalid={!!fieldState.error}>
-                <FieldLabel className="text-xs font-semibold flex items-center justify-between w-full">
+                <FieldLabel
+                  htmlFor={logoTriggerId}
+                  className="text-xs font-semibold flex items-center justify-between w-full"
+                >
                   <span>{en.workspace.createDialog.logoLabel}</span>
                   <span className="font-normal text-muted-foreground text-[11px]">
                     {en.workspace.createDialog.logoOptional}
@@ -221,11 +242,14 @@ export function CreateWorkspaceDialog({
                   type="file"
                   accept="image/png,image/jpeg"
                   className="hidden"
+                  tabIndex={-1}
+                  aria-hidden="true"
+                  disabled={isSubmitting}
                   onChange={handleFileChange}
                 />
 
-                <div className="flex items-center gap-3.5 p-3 rounded-xl border border-dashed border-border/80 bg-muted/20">
-                  <Avatar className="h-12 w-12 rounded-xl shrink-0 ring-1 ring-border/50">
+                <div className="flex items-center gap-3.5 p-3 rounded-lg border border-dashed border-border bg-muted/20">
+                  <Avatar className="size-12 rounded-lg shrink-0 ring-1 ring-border/50">
                     {previewUrl ? (
                       <AvatarImage
                         src={previewUrl}
@@ -233,11 +257,11 @@ export function CreateWorkspaceDialog({
                         className="object-cover"
                       />
                     ) : null}
-                    <AvatarFallback className="bg-muted/80 text-muted-foreground font-bold rounded-xl">
+                    <AvatarFallback className="bg-muted/80 text-muted-foreground font-semibold rounded-lg">
                       {isCompressing || isUploading ? (
                         <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                       ) : (
-                        <ImageIcon className="h-4 w-4 text-muted-foreground/70" />
+                        <ImageIcon className="h-4 w-4 text-muted-foreground" />
                       )}
                     </AvatarFallback>
                   </Avatar>
@@ -245,11 +269,15 @@ export function CreateWorkspaceDialog({
                   <div className="flex flex-col gap-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <Button
+                        id={logoTriggerId}
                         type="button"
                         variant="outline"
                         size="sm"
                         onClick={() => fileInputRef.current?.click()}
                         disabled={isSubmitting}
+                        aria-describedby={
+                          fieldState.error ? `${logoHintId} ${logoErrorId}` : logoHintId
+                        }
                         className="h-8 text-xs px-3 rounded-lg cursor-pointer"
                       >
                         {isCompressing ? (
@@ -273,19 +301,21 @@ export function CreateWorkspaceDialog({
                           size="sm"
                           onClick={handleRemoveLogo}
                           disabled={isSubmitting}
-                          className="h-8 text-xs px-2.5 rounded-lg text-muted-foreground hover:text-foreground cursor-pointer"
+                          className="h-8 text-xs px-2.5 rounded-lg text-destructive-text hover:bg-destructive/10 hover:text-destructive-text cursor-pointer"
                         >
                           <X className="mr-1 h-3.5 w-3.5" />
                           {en.workspace.logoUploader.remove}
                         </Button>
                       )}
                     </div>
-                    <p className="text-[11px] text-muted-foreground">
+                    <p id={logoHintId} className="text-[11px] text-muted-foreground">
                       {en.workspace.createDialog.logoHint}
                     </p>
                   </div>
                 </div>
-                <FieldError>{fieldState.error?.message}</FieldError>
+                <FieldError id={logoErrorId}>
+                  {fieldState.error?.message}
+                </FieldError>
               </Field>
             )}
           />

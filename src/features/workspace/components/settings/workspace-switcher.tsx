@@ -2,8 +2,7 @@
 
 import * as React from "react";
 import { useParams, useRouter } from "next/navigation";
-import { RiAddCircleFill } from "react-icons/ri";
-import { Building2 } from "lucide-react";
+import { Building2, Plus } from "lucide-react";
 import { en } from "@/locales/en";
 
 import {
@@ -37,19 +36,18 @@ export function WorkspaceSwitcher() {
   };
 
   return (
-    <div className="flex flex-col gap-y-2 w-full">
-      <div className="flex items-center justify-between px-0.5">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+    <div className="flex flex-col gap-y-1.5 w-full">
+      <div className="flex items-center justify-between px-1.5">
+        <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
           {en.workspace.switcher.sectionTitle}
         </p>
         <CreateWorkspaceDialog>
           <button
             type="button"
-            className="text-muted-foreground hover:text-foreground hover:opacity-75 transition cursor-pointer outline-none"
-            title={en.workspace.switcher.createTooltip}
+            className="size-6 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-sidebar-accent transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-ring outline-none"
             aria-label={en.workspace.switcher.createTooltip}
           >
-            <RiAddCircleFill className="size-5" />
+            <Plus className="size-3.5" aria-hidden="true" />
           </button>
         </CreateWorkspaceDialog>
       </div>
@@ -59,7 +57,10 @@ export function WorkspaceSwitcher() {
         onValueChange={handleValueChange}
         disabled={isLoading || !workspaces || workspaces.length === 0}
       >
-        <SelectTrigger className="h-11 w-full px-2.5 py-2 bg-background hover:bg-accent/60 border border-border/80 shadow-2xs transition-all duration-200 rounded-xl focus:ring-2 focus:ring-primary/20 hover:border-border">
+        <SelectTrigger
+          aria-label={en.workspace.switcher.sectionTitle}
+          className="h-10 w-full px-2 py-1.5 bg-background/60 dark:bg-card/80 hover:bg-sidebar-accent border border-input shadow-2xs transition-colors rounded-lg focus:ring-2 focus:ring-ring/30"
+        >
           <SelectValue
             placeholder={
               isLoading
@@ -68,8 +69,8 @@ export function WorkspaceSwitcher() {
             }
           >
             {currentWorkspace ? (
-              <div className="flex items-center gap-2.5 min-w-0 flex-1 text-left">
-                <Avatar className="h-6 w-6 rounded-md ring-1 ring-border/50 shrink-0">
+              <div className="flex items-center gap-2 min-w-0 flex-1 text-left">
+                <Avatar className="h-6 w-6 rounded-md ring-1 ring-border shrink-0">
                   {currentWorkspace.logo ? (
                     <AvatarImage
                       src={currentWorkspace.logo}
@@ -77,15 +78,15 @@ export function WorkspaceSwitcher() {
                       className="object-cover"
                     />
                   ) : null}
-                  <AvatarFallback className="text-[10px] font-bold rounded-md bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 text-white">
+                  <AvatarFallback className="text-[10px] font-semibold rounded-md bg-primary/15 text-brand-text border border-primary/25">
                     {currentWorkspace.name.substring(0, 2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col min-w-0 flex-1 leading-tight">
-                  <span className="truncate text-xs font-semibold text-foreground tracking-tight">
+                  <span className="truncate text-xs font-medium text-foreground">
                     {currentWorkspace.name}
                   </span>
-                  <span className="text-[10px] text-muted-foreground/80 capitalize font-medium">
+                  <span className="text-[10px] text-muted-foreground capitalize">
                     {currentWorkspace.role?.toLowerCase() ||
                       en.workspace.switcher.defaultRole}
                   </span>
@@ -103,17 +104,17 @@ export function WorkspaceSwitcher() {
           align="start"
           side="bottom"
           alignItemWithTrigger={false}
-          className="w-(--anchor-width) min-w-56 p-1 rounded-xl shadow-xl border-border/80"
+          className="w-(--anchor-width) min-w-56 p-1 rounded-xl shadow-xl border-border"
         >
           <SelectGroup>
             {workspaces?.map((workspace) => (
               <SelectItem
                 key={workspace.id}
                 value={workspace.slug}
-                className="py-2 px-2.5 rounded-lg cursor-pointer transition-colors focus:bg-accent"
+                className="py-1.5 px-2 rounded-md cursor-pointer transition-colors focus:bg-accent"
               >
                 <div className="flex items-center gap-2.5 w-full min-w-0">
-                  <Avatar className="h-6 w-6 rounded-md ring-1 ring-border/40 shrink-0">
+                  <Avatar className="h-6 w-6 rounded-md ring-1 ring-border shrink-0">
                     {workspace.logo ? (
                       <AvatarImage
                         src={workspace.logo}
@@ -121,7 +122,7 @@ export function WorkspaceSwitcher() {
                         className="object-cover"
                       />
                     ) : null}
-                    <AvatarFallback className="text-[10px] font-bold rounded-md bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 text-white">
+                    <AvatarFallback className="text-[10px] font-semibold rounded-md bg-primary/15 text-brand-text border border-primary/25">
                       {workspace.name.substring(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
@@ -129,7 +130,7 @@ export function WorkspaceSwitcher() {
                     <span className="truncate text-xs font-medium text-foreground">
                       {workspace.name}
                     </span>
-                    <span className="text-[10px] text-muted-foreground/80 capitalize font-normal">
+                    <span className="text-[10px] text-muted-foreground capitalize font-normal">
                       {workspace.role?.toLowerCase() ||
                         en.workspace.switcher.defaultRole}
                     </span>

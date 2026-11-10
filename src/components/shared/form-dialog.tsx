@@ -34,8 +34,8 @@ export function FormDialog({
         </DialogTrigger>
       )}
       <DialogContent>
-        <DialogHeader className="text-center items-center justify-center pr-0">
-          <DialogTitle className="text-center pr-0 text-base font-bold">
+        <DialogHeader className="text-left items-start pb-1">
+          <DialogTitle className="text-sm font-semibold tracking-tight text-foreground">
             {title}
           </DialogTitle>
         </DialogHeader>

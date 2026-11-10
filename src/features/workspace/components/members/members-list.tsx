@@ -3,10 +3,7 @@
 import React, { useState } from "react";
 import { toast } from "sonner";
 import { en } from "@/locales/en";
-import {
-  WORKSPACE_ROLES,
-  type WorkspaceRoleType,
-} from "@/features/workspace/constants";
+import { WORKSPACE_ROLES } from "@/features/workspace/constants";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { MembersListSkeleton } from "./members-list-skeleton";
 import { MembersListError } from "./members-list-error";
@@ -75,8 +72,12 @@ export function MembersList({
           toast.success(en.workspace.members.toastRoleSuccess);
           setRoleChangeRequest(null);
         },
-        onError: (err: any) => {
-          toast.error(err.message || en.workspace.members.toastRoleError);
+        onError: (err: unknown) => {
+          const msg =
+            err instanceof Error
+              ? err.message
+              : en.workspace.members.toastRoleError;
+          toast.error(msg);
         },
       }
     );
@@ -100,8 +101,12 @@ export function MembersList({
         );
         setMemberToRemove(null);
       },
-      onError: (err: any) => {
-        toast.error(err.message || en.workspace.members.toastRemoveError);
+      onError: (err: unknown) => {
+        const msg =
+          err instanceof Error
+            ? err.message
+            : en.workspace.members.toastRemoveError;
+        toast.error(msg);
       },
     });
   };

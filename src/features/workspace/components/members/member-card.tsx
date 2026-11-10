@@ -60,16 +60,16 @@ export function MemberCard({
   const canRemove = currentUserRole === WORKSPACE_ROLES.OWNER && !isCurrentUser;
 
   return (
-    <Card className="rounded-2xl border border-border/80 shadow-sm bg-card hover:shadow-md transition-shadow duration-200">
-      <CardContent className="p-5 flex flex-col gap-4 justify-between h-full">
-        <div className="flex items-start justify-between gap-4">
+    <Card className="rounded-xl border border-border/75 bg-card hover:border-border transition-colors duration-150">
+      <CardContent className="p-4 flex flex-col gap-3.5 justify-between h-full">
+        <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
-            <Avatar className="size-10 shrink-0">
+            <Avatar className="size-9 shrink-0">
               <AvatarImage
-                src={(member.user as any)?.image || undefined}
+                src={member.user?.image || undefined}
                 alt={member.user?.name || ""}
               />
-              <AvatarFallback className="bg-muted text-foreground font-semibold text-xs">
+              <AvatarFallback className="bg-primary/10 text-brand-text font-semibold text-xs">
                 {member.user?.name
                   ? member.user.name
                       .split(" ")
@@ -84,12 +84,12 @@ export function MemberCard({
               <span className="text-xs font-semibold text-foreground truncate flex items-center gap-1.5">
                 {member.user?.name || en.workspace.members.anonymousUser}
                 {isCurrentUser && (
-                  <span className="bg-secondary text-secondary-foreground px-1.5 py-0.5 rounded-md text-[9px] font-bold">
+                  <span className="bg-secondary text-secondary-foreground px-1.5 py-0.5 rounded text-[9px] font-semibold">
                     {en.workspace.members.youBadge}
                   </span>
                 )}
               </span>
-              <span className="text-[10px] text-muted-foreground truncate mt-0.5">
+              <span className="text-[11px] text-muted-foreground truncate mt-0.5">
                 {member.user?.email}
               </span>
             </div>
@@ -102,16 +102,16 @@ export function MemberCard({
               size="icon-sm"
               onClick={() => onRemove(member)}
               disabled={disabled}
-              className="shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer rounded-lg"
-              title={en.workspace.members.removeTooltip}
+              className="shrink-0 text-muted-foreground hover:text-destructive-text hover:bg-destructive/10 cursor-pointer rounded-md"
+              aria-label={`Remove ${member.user?.name || member.user?.email || "member"}`}
             >
-              <Trash2 className="size-4" />
+              <Trash2 className="size-3.5" />
             </Button>
           )}
         </div>
 
         <div className="flex items-center justify-between border-t border-border/50 pt-3 gap-4">
-          <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+          <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
             {en.workspace.members.roleLabel}
           </span>
 
@@ -123,10 +123,13 @@ export function MemberCard({
               }}
               disabled={disabled}
             >
-              <SelectTrigger className="w-28 h-8 px-2 bg-input/20 border-border/80 rounded-lg text-xs font-medium focus:ring-2 focus:ring-primary/20 hover:border-border">
+              <SelectTrigger
+                aria-label={`Role for ${member.user?.name || member.user?.email || "member"}`}
+                className="w-28 h-8 px-2.5 bg-background border-input rounded-lg text-xs font-medium hover:border-border"
+              >
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="min-w-36 p-1 rounded-lg shadow-md border border-border/80">
+              <SelectContent className="min-w-36 p-1 rounded-xl border border-border/80">
                 {selectOptions.map((opt) => (
                   <SelectItem key={opt} value={opt} className="text-xs">
                     {opt === WORKSPACE_ROLES.OWNER
@@ -139,15 +142,15 @@ export function MemberCard({
               </SelectContent>
             </Select>
           ) : (
-            <span className="flex items-center gap-1 text-[11px] font-semibold text-foreground/80">
+            <span className="flex items-center gap-1 text-[11px] font-medium text-foreground">
               {isOwner ? (
                 <>
-                  <Shield className="size-3.5 text-amber-500 fill-amber-500/20" />
+                  <Shield className="size-3.5 text-amber-700 dark:text-amber-400 fill-amber-500/20" />
                   {en.workspace.members.roles.owner}
                 </>
               ) : isAdmin ? (
                 <>
-                  <Shield className="size-3.5 text-blue-500 fill-blue-500/20" />
+                  <Shield className="size-3.5 text-blue-700 dark:text-blue-400 fill-blue-500/20" />
                   {en.workspace.members.roles.admin}
                 </>
               ) : (

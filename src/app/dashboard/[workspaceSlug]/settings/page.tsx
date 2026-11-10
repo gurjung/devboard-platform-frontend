@@ -56,12 +56,12 @@ export default function WorkspaceSettingsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 max-w-xl mx-auto py-4">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold tracking-tight text-center">
+    <div className="flex flex-col gap-5 max-w-xl mx-auto py-3">
+      <div className="border-b border-border/70 pb-4">
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">
           {en.workspace.settingsPage.title}
         </h1>
-        <p className="text-sm text-muted-foreground mt-1 text-center">
+        <p className="text-xs text-muted-foreground mt-1">
           {en.workspace.settingsPage.description}
         </p>
       </div>

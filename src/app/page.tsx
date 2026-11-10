@@ -22,7 +22,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background text-foreground gap-y-4">
-      <Loader2 className="size-8 animate-spin text-primary" />
+      <Loader2 className="size-8 animate-spin text-brand-text" />
       <p className="text-sm text-muted-foreground animate-pulse">
         Loading DevBoard...
       </p>

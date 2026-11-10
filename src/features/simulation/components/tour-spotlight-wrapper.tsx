@@ -24,7 +24,13 @@ export function TourSpotlightWrapper({
   useEffect(() => {
     if (isHighlighted && ref.current) {
       const timer = setTimeout(() => {
-        ref.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+        const prefersReduced =
+          typeof window !== "undefined" &&
+          window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        ref.current?.scrollIntoView({
+          behavior: prefersReduced ? "auto" : "smooth",
+          block: "center",
+        });
       }, 100);
       return () => clearTimeout(timer);
     }

@@ -8,70 +8,81 @@ import type { Task, TasksResponse, UpdateTaskInput } from "../types";
 
 export interface UpdateTaskParams {
   taskId: string;
+  projectId?: string;
   data: UpdateTaskInput;
   silent?: boolean;
 }
 
-export function useUpdateTask(workspaceId?: string, projectId?: string) {
+export function useUpdateTask(workspaceId?: string, defaultProjectId?: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ taskId, data }: UpdateTaskParams) => {
-      if (!workspaceId || !projectId) {
+    mutationFn: async ({ taskId, projectId, data }: UpdateTaskParams) => {
+      const targetProjectId = projectId || defaultProjectId;
+      if (!workspaceId || !targetProjectId) {
         throw new Error("Workspace and Project are required to update a task");
       }
 
-      const res = await apiClient.patch<any>(
-        `/workspaces/${workspaceId}/projects/${projectId}/tasks/${taskId}`,
+      const res = await apiClient.patch<{ data?: Task } | Task>(
+        `/workspaces/${workspaceId}/projects/${targetProjectId}/tasks/${taskId}`,
         data
       );
-      return (res.data || res) as Task;
+      return ("data" in res && res.data ? res.data : res) as Task;
     },
-    onMutate: async ({ taskId, data }) => {
-      // Cancel outgoing refetches
+    onMutate: async ({ taskId, projectId, data }) => {
+      const targetProjectId = projectId || defaultProjectId;
+
       await queryClient.cancelQueries({
-        queryKey: ["tasks", workspaceId, projectId],
+        queryKey: ["tasks", workspaceId, targetProjectId],
+      });
+      await queryClient.cancelQueries({
+        queryKey: ["my-tasks", workspaceId],
       });
 
-      // Snapshot previous queries data
       const previousQueries = queryClient.getQueriesData<InfiniteData<TasksResponse>>({
-        queryKey: ["tasks", workspaceId, projectId],
+        queryKey: ["tasks", workspaceId, targetProjectId],
+      });
+      const previousMyTasksQueries = queryClient.getQueriesData<InfiniteData<TasksResponse>>({
+        queryKey: ["my-tasks", workspaceId],
       });
 
-      // Optimistically update all matching infinite query caches
-      queryClient.setQueriesData<InfiniteData<TasksResponse>>(
-        { queryKey: ["tasks", workspaceId, projectId] },
-        (oldData) => {
-          if (!oldData) return oldData;
+      const applyTaskPatch = (oldData: InfiniteData<TasksResponse> | undefined) => {
+        if (!oldData) return oldData;
+        return {
+          ...oldData,
+          pages: oldData.pages.map((page) => ({
+            ...page,
+            tasks: page.tasks.map((task) =>
+              task.id === taskId
+                ? {
+                    ...task,
+                    ...data,
+                    updatedAt: new Date().toISOString(),
+                  }
+                : task
+            ),
+          })),
+        };
+      };
 
-          return {
-            ...oldData,
-            pages: oldData.pages.map((page) => ({
-              ...page,
-              tasks: page.tasks.map((task) =>
-                task.id === taskId
-                  ? {
-                      ...task,
-                      ...data,
-                      updatedAt: new Date().toISOString(),
-                    }
-                  : task
-              ),
-            })),
-          };
-        }
+      queryClient.setQueriesData<InfiniteData<TasksResponse>>(
+        { queryKey: ["tasks", workspaceId, targetProjectId] },
+        applyTaskPatch
+      );
+      queryClient.setQueriesData<InfiniteData<TasksResponse>>(
+        { queryKey: ["my-tasks", workspaceId] },
+        applyTaskPatch
       );
 
-      // Also update single task cache if present
       const previousSingleTask = queryClient.getQueryData<Task>([
         "task",
         workspaceId,
-        projectId,
+        targetProjectId,
         taskId,
       ]);
       if (previousSingleTask) {
         queryClient.setQueryData<Task>(
-          ["task", workspaceId, projectId, taskId],
+          ["task", workspaceId, targetProjectId, taskId],
           {
             ...previousSingleTask,
             ...data,
@@ -80,31 +91,38 @@ export function useUpdateTask(workspaceId?: string, projectId?: string) {
         );
       }
 
-      return { previousQueries, previousSingleTask };
+      return { previousQueries, previousMyTasksQueries, previousSingleTask, targetProjectId };
     },
-    onError: (error: any, { taskId }, context) => {
-      // Rollback caches on error
+    onError: (error: unknown, { taskId }, context) => {
       if (context?.previousQueries) {
         for (const [key, value] of context.previousQueries) {
           queryClient.setQueryData(key, value);
         }
       }
-      if (context?.previousSingleTask) {
+      if (context?.previousMyTasksQueries) {
+        for (const [key, value] of context.previousMyTasksQueries) {
+          queryClient.setQueryData(key, value);
+        }
+      }
+      if (context?.previousSingleTask && context?.targetProjectId) {
         queryClient.setQueryData(
-          ["task", workspaceId, projectId, taskId],
+          ["task", workspaceId, context.targetProjectId, taskId],
           context.previousSingleTask
         );
       }
-      toast.error(error?.message || en.tasks.toasts.updateError);
+      const message =
+        error instanceof Error ? error.message : en.tasks.toasts.updateError;
+      toast.error(message);
     },
     onSuccess: (_, { silent }) => {
       if (!silent) {
         toast.success(en.tasks.toasts.updateSuccess);
       }
     },
-    onSettled: () => {
+    onSettled: (_, __, { projectId }) => {
+      const targetProjectId = projectId || defaultProjectId;
       queryClient.invalidateQueries({
-        queryKey: ["tasks", workspaceId, projectId],
+        queryKey: ["tasks", workspaceId, targetProjectId],
       });
       queryClient.invalidateQueries({
         queryKey: ["workspace-stats", workspaceId],

@@ -3,11 +3,12 @@
 import * as React from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Plus, Calendar as CalendarIcon, User as UserIcon } from "lucide-react";
+import { Loader2, Plus, User as UserIcon } from "lucide-react";
 import { FormDialog } from "@/components/shared/form-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -44,6 +45,18 @@ export function CreateTaskDialog({
 }: CreateTaskDialogProps) {
   const { data: members = [], isLoading: isMembersLoading } = useWorkspaceMembers(workspaceId);
   const createTaskMutation = useCreateTask(workspaceId, projectId);
+
+  const titleId = React.useId();
+  const titleErrorId = React.useId();
+  const descriptionId = React.useId();
+  const descriptionErrorId = React.useId();
+  const statusLabelId = React.useId();
+  const statusTriggerId = React.useId();
+  const priorityLabelId = React.useId();
+  const priorityTriggerId = React.useId();
+  const dueDateId = React.useId();
+  const assigneeLabelId = React.useId();
+  const assigneeTriggerId = React.useId();
 
   const {
     register,
@@ -103,40 +116,54 @@ export function CreateTaskDialog({
       title={en.tasks.createTask}
       trigger={trigger}
     >
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pt-1">
+      <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4 pt-1">
         {/* Title Input */}
         <div className="space-y-1.5">
-          <Label htmlFor="task-title" className="text-xs font-semibold">
-            {en.tasks.form.titleLabel} <span className="text-destructive">*</span>
+          <Label htmlFor={titleId} className="text-xs font-semibold">
+            {en.tasks.form.titleLabel}{" "}
+            <span aria-hidden="true" className="text-destructive-text">
+              *
+            </span>
           </Label>
           <Input
-            id="task-title"
+            id={titleId}
             placeholder={en.tasks.form.titlePlaceholder}
-            className="text-sm rounded-xl"
+            className="text-sm rounded-lg"
             disabled={createTaskMutation.isPending}
+            aria-required="true"
+            aria-invalid={!!errors.title}
+            aria-describedby={errors.title ? titleErrorId : undefined}
             autoFocus
             {...register("title")}
           />
           {errors.title && (
-            <p className="text-xs text-destructive">{errors.title.message}</p>
+            <p id={titleErrorId} role="alert" className="text-xs text-destructive-text">
+              {errors.title.message}
+            </p>
           )}
         </div>
 
         {/* Description Textarea */}
         <div className="space-y-1.5">
-          <Label htmlFor="task-description" className="text-xs font-semibold">
+          <Label htmlFor={descriptionId} className="text-xs font-semibold">
             {en.tasks.form.descriptionLabel}
           </Label>
-          <textarea
-            id="task-description"
+          <Textarea
+            id={descriptionId}
             rows={3}
             placeholder={en.tasks.form.descriptionPlaceholder}
-            className="w-full rounded-xl border border-input bg-input/20 px-3 py-2 text-sm shadow-xs transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 resize-y"
+            className="min-h-[84px] text-xs rounded-lg resize-y"
             disabled={createTaskMutation.isPending}
+            aria-invalid={!!errors.description}
+            aria-describedby={errors.description ? descriptionErrorId : undefined}
             {...register("description")}
           />
           {errors.description && (
-            <p className="text-xs text-destructive">
+            <p
+              id={descriptionErrorId}
+              role="alert"
+              className="text-xs text-destructive-text"
+            >
               {errors.description.message}
             </p>
           )}
@@ -146,7 +173,11 @@ export function CreateTaskDialog({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {/* Status */}
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold">
+            <Label
+              id={statusLabelId}
+              htmlFor={statusTriggerId}
+              className="text-xs font-semibold"
+            >
               {en.tasks.form.statusLabel}
             </Label>
             <Controller
@@ -158,10 +189,14 @@ export function CreateTaskDialog({
                   onValueChange={(val) => val && field.onChange(val)}
                   disabled={createTaskMutation.isPending}
                 >
-                  <SelectTrigger className="w-full h-9 rounded-xl text-xs">
+                  <SelectTrigger
+                    id={statusTriggerId}
+                    aria-labelledby={statusLabelId}
+                    className="w-full h-8 rounded-lg text-xs"
+                  >
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="rounded-xl">
                     {TASK_STATUSES.map((st) => {
                       const cfg = TASK_STATUS_CONFIG[st];
                       const Icon = cfg.icon;
@@ -182,7 +217,11 @@ export function CreateTaskDialog({
 
           {/* Priority */}
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold">
+            <Label
+              id={priorityLabelId}
+              htmlFor={priorityTriggerId}
+              className="text-xs font-semibold"
+            >
               {en.tasks.form.priorityLabel}
             </Label>
             <Controller
@@ -194,10 +233,14 @@ export function CreateTaskDialog({
                   onValueChange={(val) => val && field.onChange(val)}
                   disabled={createTaskMutation.isPending}
                 >
-                  <SelectTrigger className="w-full h-9 rounded-xl text-xs">
+                  <SelectTrigger
+                    id={priorityTriggerId}
+                    aria-labelledby={priorityLabelId}
+                    className="w-full h-8 rounded-lg text-xs"
+                  >
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="rounded-xl">
                     {TASK_PRIORITIES.map((pr) => {
                       const cfg = TASK_PRIORITY_CONFIG[pr];
                       const Icon = cfg.icon;
@@ -221,15 +264,15 @@ export function CreateTaskDialog({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {/* Due Date */}
           <div className="space-y-1.5">
-            <Label htmlFor="task-due-date" className="text-xs font-semibold">
+            <Label htmlFor={dueDateId} className="text-xs font-semibold">
               {en.tasks.form.dueDateLabel}
             </Label>
             <div className="relative">
               <Input
-                id="task-due-date"
+                id={dueDateId}
                 type="date"
                 min={format(new Date(), "yyyy-MM-dd")}
-                className="text-xs h-9 rounded-xl"
+                className="text-xs h-8 rounded-lg"
                 disabled={createTaskMutation.isPending}
                 {...register("dueDate")}
               />
@@ -238,7 +281,11 @@ export function CreateTaskDialog({
 
           {/* Assignee */}
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold">
+            <Label
+              id={assigneeLabelId}
+              htmlFor={assigneeTriggerId}
+              className="text-xs font-semibold"
+            >
               {en.tasks.form.assigneeLabel}
             </Label>
             <Controller
@@ -250,13 +297,17 @@ export function CreateTaskDialog({
                   onValueChange={(val) => field.onChange(val === "unassigned" ? "" : val)}
                   disabled={createTaskMutation.isPending || isMembersLoading}
                 >
-                  <SelectTrigger className="w-full h-9 rounded-xl text-xs">
+                  <SelectTrigger
+                    id={assigneeTriggerId}
+                    aria-labelledby={assigneeLabelId}
+                    className="w-full h-8 rounded-lg text-xs"
+                  >
                     <SelectValue placeholder={en.tasks.form.assigneePlaceholder} />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="rounded-xl">
                     <SelectItem value="unassigned">
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <UserIcon className="size-3.5 opacity-50" />
+                        <UserIcon className="size-3.5 text-muted-foreground" />
                         <span>{en.tasks.unassigned}</span>
                       </div>
                     </SelectItem>
@@ -283,14 +334,14 @@ export function CreateTaskDialog({
         </div>
 
         {/* Dialog Actions */}
-        <div className="flex items-center justify-end gap-2 pt-3 border-t border-border/50">
+        <div className="flex items-center justify-end gap-2 pt-3 border-t border-border/60">
           <Button
             type="button"
             variant="ghost"
             size="sm"
             onClick={() => onOpenChange(false)}
             disabled={createTaskMutation.isPending}
-            className="text-xs cursor-pointer"
+            className="h-8 text-xs rounded-lg cursor-pointer"
           >
             {en.common.cancel}
           </Button>
@@ -298,7 +349,7 @@ export function CreateTaskDialog({
             type="submit"
             size="sm"
             disabled={createTaskMutation.isPending}
-            className="text-xs cursor-pointer gap-1.5 font-semibold"
+            className="h-8 text-xs rounded-lg cursor-pointer gap-1.5 font-medium"
           >
             {createTaskMutation.isPending ? (
               <>

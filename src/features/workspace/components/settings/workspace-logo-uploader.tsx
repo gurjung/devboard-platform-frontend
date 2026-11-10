@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useId, useRef, useState } from "react";
 import imageCompression from "browser-image-compression";
 import { toast } from "sonner";
 import { Loader2, Upload, X, ImageIcon } from "lucide-react";
@@ -31,6 +31,9 @@ export function WorkspaceLogoUploader({
   error,
 }: WorkspaceLogoUploaderProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const uploadButtonId = useId();
+  const hintId = useId();
+  const errorId = useId();
   const [isCompressing, setIsCompressing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -113,7 +116,7 @@ export function WorkspaceLogoUploader({
 
   return (
     <Field invalid={!!error}>
-      <FieldLabel className="text-xs font-semibold">
+      <FieldLabel htmlFor={uploadButtonId} className="text-xs font-semibold">
         {en.workspace.logoUploader.label}{" "}
         <span className="font-normal text-muted-foreground">
           {en.workspace.logoUploader.optional}
@@ -126,6 +129,8 @@ export function WorkspaceLogoUploader({
         className="hidden"
         onChange={handleFileChange}
         disabled={disabled || isCompressing}
+        tabIndex={-1}
+        aria-hidden="true"
       />
 
       <div
@@ -133,13 +138,13 @@ export function WorkspaceLogoUploader({
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         className={cn(
-          "flex items-center gap-3.5 p-3 rounded-xl border border-dashed transition-colors duration-200",
+          "flex items-center gap-3.5 p-3 rounded-lg border border-dashed transition-colors duration-200",
           isDragging
             ? "border-primary bg-primary/5 dark:bg-primary/10"
-            : "border-border/80 bg-muted/20"
+            : "border-border bg-muted/20"
         )}
       >
-        <Avatar className="h-12 w-12 rounded-xl shrink-0 ring-1 ring-border/50">
+        <Avatar className="size-12 rounded-lg shrink-0 ring-1 ring-border/50">
           {previewUrl ? (
             <AvatarImage
               src={previewUrl}
@@ -147,11 +152,11 @@ export function WorkspaceLogoUploader({
               className="object-cover"
             />
           ) : null}
-          <AvatarFallback className="bg-muted/80 text-muted-foreground font-bold rounded-xl">
+          <AvatarFallback className="bg-muted/80 text-muted-foreground font-semibold rounded-lg">
             {isCompressing ? (
               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
             ) : (
-              <ImageIcon className="h-4 w-4 text-muted-foreground/70" />
+              <ImageIcon className="h-4 w-4 text-muted-foreground" />
             )}
           </AvatarFallback>
         </Avatar>
@@ -159,11 +164,13 @@ export function WorkspaceLogoUploader({
         <div className="flex flex-col gap-1 min-w-0">
           <div className="flex items-center gap-2">
             <Button
+              id={uploadButtonId}
               type="button"
               variant="outline"
               size="sm"
               onClick={() => fileInputRef.current?.click()}
               disabled={disabled || isCompressing}
+              aria-describedby={error ? `${hintId} ${errorId}` : hintId}
               className="h-8 text-xs px-3 rounded-lg cursor-pointer"
             >
               {isCompressing ? (
@@ -194,12 +201,12 @@ export function WorkspaceLogoUploader({
               </Button>
             )}
           </div>
-          <p className="text-[11px] text-muted-foreground">
+          <p id={hintId} className="text-[11px] text-muted-foreground">
             {en.workspace.logoUploader.hint}
           </p>
         </div>
       </div>
-      <FieldError>{error}</FieldError>
+      <FieldError id={errorId}>{error}</FieldError>
     </Field>
   );
 }

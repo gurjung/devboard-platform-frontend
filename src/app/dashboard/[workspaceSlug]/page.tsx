@@ -11,10 +11,7 @@ import {
   FolderKanban,
   CheckCircle2,
   Clock,
-  Plus,
-  Calendar as CalendarIcon,
   AlertCircle,
-  ExternalLink,
 } from "lucide-react";
 import { format, isPast, isToday } from "date-fns";
 import { useWorkspaces } from "@/features/workspace/hooks/use-workspaces";
@@ -27,10 +24,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { WorkspaceRole } from "@/features/workspace/constants";
+import type { WorkspaceRole as WorkspaceRoleType } from "@/features/workspace/types";
+import type { Project } from "@/features/projects/types";
 import { TaskStatusBadge } from "@/features/tasks/components/task-status-badge";
 import { TaskPriorityBadge } from "@/features/tasks/components/task-priority-badge";
 import { TaskAssigneeAvatar } from "@/features/tasks/components/task-assignee-avatar";
 import { EditTaskDialog } from "@/features/tasks/components/edit-task-dialog";
+import { getShortTaskKey } from "@/features/tasks/constants";
 import type { Task } from "@/features/tasks/types";
 import { useAuth } from "@/features/auth/context/auth-context";
 import { en } from "@/locales/en";
@@ -52,7 +52,7 @@ export default function WorkspaceDashboardPage() {
     workspace?.id
   );
 
-  const { data: members = [], isLoading: isMembersLoading } = useWorkspaceMembers(
+  const { data: members = [] } = useWorkspaceMembers(
     workspace?.id || ""
   );
 
@@ -67,7 +67,7 @@ export default function WorkspaceDashboardPage() {
   if (!workspace) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] text-center p-4">
-        <h2 className="text-xl font-bold text-foreground">Workspace not found</h2>
+        <h1 className="text-xl font-bold text-foreground">Workspace not found</h1>
         <p className="text-xs text-muted-foreground mt-1">
           The requested workspace could not be found.
         </p>
@@ -110,11 +110,11 @@ export default function WorkspaceDashboardPage() {
   const projectsList = statsData?.projects || [];
 
   return (
-    <div className="flex flex-col gap-6 sm:gap-8 pb-10 w-full max-w-[1600px] mx-auto py-1">
+    <div className="flex flex-col gap-6 pb-8 w-full max-w-[1600px] mx-auto py-1">
       {/* Workspace Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border/80 pb-5">
-        <div className="flex items-center gap-4">
-          <Avatar className="size-14 rounded-2xl ring-1 ring-border/50">
+      <div className="flex flex-col gap-3.5 sm:flex-row sm:items-center sm:justify-between border-b border-border/50 pb-4">
+        <div className="flex items-center gap-3.5 min-w-0">
+          <Avatar className="size-11 rounded-xl ring-1 ring-border/70 shrink-0">
             {workspace.logo ? (
               <AvatarImage
                 src={workspace.logo}
@@ -122,47 +122,47 @@ export default function WorkspaceDashboardPage() {
                 className="object-cover"
               />
             ) : null}
-            <AvatarFallback className="text-lg font-bold rounded-2xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 text-white">
+            <AvatarFallback className="text-sm font-semibold rounded-xl bg-primary/15 text-brand-text border border-primary/20">
               {workspace.name.substring(0, 2).toUpperCase()}
             </AvatarFallback>
           </Avatar>
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-2.5">
-              <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+          <div className="flex flex-col gap-0.5 min-w-0">
+            <div className="flex items-center gap-2 min-w-0">
+              <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl truncate">
                 {workspace.name}
               </h1>
-              <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 uppercase tracking-wider">
+              <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-muted text-muted-foreground border border-border/70 uppercase tracking-wider shrink-0">
                 {role || "MEMBER"}
               </span>
             </div>
-            <p className="text-xs sm:text-sm text-muted-foreground">
+            <p className="text-xs text-muted-foreground truncate">
               Workspace overview, projects, metrics, and team collaboration.
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5">
-          <Link href={`/dashboard/${workspaceSlug}/members`}>
+        <div className="flex items-center gap-2 shrink-0">
+          <Button
+            variant="outline"
+            size="sm"
+            nativeButton={false}
+            render={<Link href={`/dashboard/${workspaceSlug}/members`} />}
+            className="gap-1.5 rounded-lg h-8 text-xs font-medium"
+          >
+            <Users className="size-3.5" />
+            <span>Members</span>
+          </Button>
+          {canManage && (
             <Button
               variant="outline"
               size="sm"
-              className="gap-2 cursor-pointer rounded-xl h-9"
+              nativeButton={false}
+              render={<Link href={`/dashboard/${workspaceSlug}/settings`} />}
+              className="gap-1.5 rounded-lg h-8 text-xs font-medium"
             >
-              <Users className="size-4" />
-              <span>Members</span>
+              <Settings className="size-3.5" />
+              <span>Settings</span>
             </Button>
-          </Link>
-          {canManage && (
-            <Link href={`/dashboard/${workspaceSlug}/settings`}>
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-2 cursor-pointer rounded-xl h-9"
-              >
-                <Settings className="size-4" />
-                <span>Settings</span>
-              </Button>
-            </Link>
           )}
         </div>
       </div>
@@ -181,46 +181,86 @@ export default function WorkspaceDashboardPage() {
       </section>
 
       {/* Main Content Grid: Recent Tasks & Projects / Team */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Left Column (2 cols wide): Recent Tasks */}
-        <div className="lg:col-span-2 space-y-6">
-          <Card className="rounded-2xl border border-border/80 shadow-xs overflow-hidden">
+        <div className="lg:col-span-2 space-y-5">
+          <Card className="rounded-xl border border-border/50 overflow-hidden">
             <CardHeader className="flex flex-row items-center justify-between pb-3">
               <div>
-                <CardTitle className="text-base font-bold flex items-center gap-2">
-                  <Clock className="size-4 text-primary" />
-                  <span>Recent Tasks</span>
+                <CardTitle>
+                  <h2 className="text-sm font-semibold flex items-center gap-2">
+                    <Clock className="size-4 text-brand-text" aria-hidden="true" />
+                    <span>Recent Tasks</span>
+                  </h2>
                 </CardTitle>
                 <CardDescription className="text-xs">
                   Latest activity and task updates across your workspace.
                 </CardDescription>
               </div>
-              <Link href={`/dashboard/${workspaceSlug}/my-tasks`}>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-xs gap-1 h-8 rounded-xl cursor-pointer"
-                >
-                  <span>My Tasks</span>
-                  <ArrowRight className="size-3.5" />
-                </Button>
-              </Link>
+              <Button
+                variant="ghost"
+                size="sm"
+                nativeButton={false}
+                render={<Link href={`/dashboard/${workspaceSlug}/my-tasks`} />}
+                className="text-xs gap-1 h-7.5 rounded-lg"
+              >
+                <span>My Tasks</span>
+                <ArrowRight className="size-3.5" aria-hidden="true" />
+              </Button>
             </CardHeader>
             <CardContent className="p-0">
               {recentTasks.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-muted/40 border-y border-border/60 text-muted-foreground font-semibold select-none">
+                <div
+                  tabIndex={0}
+                  role="region"
+                  aria-label="Recent tasks"
+                  className="overflow-x-auto focus-visible:outline-2 focus-visible:outline-ring focus-visible:-outline-offset-2"
+                >
+                  <table className="w-full min-w-[640px] text-left text-xs border-separate border-spacing-0">
+                    <caption className="sr-only">
+                      Recent task updates across workspace projects
+                    </caption>
+                    <thead className="bg-muted/50 text-muted-foreground font-medium select-none">
                       <tr>
-                        <th className="py-2.5 px-3.5 w-32">{en.tasks.tableHeaders.status}</th>
-                        <th className="py-2.5 px-3.5 min-w-[180px]">{en.tasks.tableHeaders.task}</th>
-                        <th className="py-2.5 px-3.5 w-36">Project</th>
-                        <th className="py-2.5 px-3.5 w-28">{en.tasks.tableHeaders.priority}</th>
-                        <th className="py-2.5 px-3.5 w-32">{en.tasks.tableHeaders.dueDate}</th>
-                        <th className="py-2.5 px-3.5 w-36">{en.tasks.tableHeaders.assignee}</th>
+                        <th
+                          scope="col"
+                          className="py-2 px-3.5 w-32 border-y border-border/50 font-medium"
+                        >
+                          {en.tasks.tableHeaders.status}
+                        </th>
+                        <th
+                          scope="col"
+                          className="py-2 px-3.5 min-w-[200px] border-y border-border/50 font-medium"
+                        >
+                          {en.tasks.tableHeaders.task}
+                        </th>
+                        <th
+                          scope="col"
+                          className="py-2 px-3.5 w-36 border-y border-border/50 font-medium"
+                        >
+                          Project
+                        </th>
+                        <th
+                          scope="col"
+                          className="py-2 px-3.5 w-28 border-y border-border/50 font-medium"
+                        >
+                          {en.tasks.tableHeaders.priority}
+                        </th>
+                        <th
+                          scope="col"
+                          className="py-2 px-3.5 w-32 border-y border-border/50 font-medium"
+                        >
+                          {en.tasks.tableHeaders.dueDate}
+                        </th>
+                        <th
+                          scope="col"
+                          className="py-2 px-3.5 w-36 border-y border-border/50 font-medium"
+                        >
+                          {en.tasks.tableHeaders.assignee}
+                        </th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-border/40">
+                    <tbody className="[&_tr:last-child_td]:border-b-0">
                       {recentTasks.map((task) => {
                         const isOverdue =
                           task.dueDate &&
@@ -239,7 +279,7 @@ export default function WorkspaceDashboardPage() {
                             className="group hover:bg-muted/30 transition-colors cursor-pointer"
                           >
                             {/* Status */}
-                            <td className="py-2.5 px-3.5">
+                            <td className="py-2.5 px-3.5 border-b border-border/40">
                               <TaskStatusBadge
                                 status={task.status}
                                 size="sm"
@@ -247,38 +287,48 @@ export default function WorkspaceDashboardPage() {
                             </td>
 
                             {/* Task Title */}
-                            <td className="py-2.5 px-3.5 max-w-xs">
-                              <span
-                                className={cn(
-                                  "font-semibold text-foreground text-xs line-clamp-1 truncate block group-hover:text-primary transition-colors",
-                                  task.status === "DONE" &&
-                                    "line-through text-muted-foreground"
-                                )}
-                                title={task.title}
-                              >
-                                {task.title}
-                              </span>
+                            <td className="py-2.5 px-3.5 max-w-xs border-b border-border/40">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className="font-mono text-[10px] font-medium text-muted-foreground tabular-nums shrink-0">
+                                  {getShortTaskKey(task.id)}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedTask(task);
+                                  }}
+                                  className={cn(
+                                    "min-w-0 truncate text-left font-medium text-foreground text-xs group-hover:text-brand-text hover:text-brand-text focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2 rounded-xs transition-colors cursor-pointer",
+                                    task.status === "DONE" &&
+                                      "line-through text-muted-foreground"
+                                  )}
+                                  title={task.title}
+                                >
+                                  {task.title}
+                                </button>
+                              </div>
                             </td>
 
                             {/* Project */}
-                            <td className="py-2.5 px-3.5">
+                            <td className="py-2.5 px-3.5 border-b border-border/40">
                               {task.project ? (
                                 <Link
                                   href={`/dashboard/${workspaceSlug}/projects/${task.project.slug}`}
                                   onClick={(e) => e.stopPropagation()}
-                                  className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors truncate max-w-[140px]"
+                                  className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-brand-text transition-colors truncate max-w-[140px]"
                                   title={task.project.name}
                                 >
-                                  <FolderKanban className="size-3.5 shrink-0 opacity-60" />
+                                  <FolderKanban className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
                                   <span className="truncate">{task.project.name}</span>
                                 </Link>
                               ) : (
-                                <span className="text-muted-foreground/60 text-[11px]">—</span>
+                                <span className="text-muted-foreground text-[11px]">—</span>
                               )}
                             </td>
 
                             {/* Priority */}
-                            <td className="py-2.5 px-3.5">
+                            <td className="py-2.5 px-3.5 border-b border-border/40">
                               <TaskPriorityBadge
                                 priority={task.priority}
                                 size="sm"
@@ -286,28 +336,28 @@ export default function WorkspaceDashboardPage() {
                             </td>
 
                             {/* Due Date */}
-                            <td className="py-2.5 px-3.5">
+                            <td className="py-2.5 px-3.5 border-b border-border/40 tabular-nums">
                               {formattedDate ? (
                                 <div
                                   className={cn(
                                     "inline-flex items-center gap-1.5 text-xs font-medium",
                                     isOverdue
-                                      ? "text-rose-600 dark:text-rose-400 font-semibold"
+                                      ? "text-rose-700 dark:text-rose-300 font-semibold"
                                       : "text-muted-foreground"
                                   )}
                                 >
                                   {isOverdue && (
-                                    <AlertCircle className="size-3.5 text-rose-500 shrink-0" />
+                                    <AlertCircle className="size-3.5 text-rose-600 dark:text-rose-400 shrink-0" aria-hidden="true" />
                                   )}
                                   <span>{formattedDate}</span>
                                 </div>
                               ) : (
-                                <span className="text-muted-foreground/60 text-[11px]">—</span>
+                                <span className="text-muted-foreground text-[11px]">—</span>
                               )}
                             </td>
 
                             {/* Assignee */}
-                            <td className="py-2.5 px-3.5">
+                            <td className="py-2.5 px-3.5 border-b border-border/40">
                               <TaskAssigneeAvatar
                                 assignee={task.assignee}
                                 size="sm"
@@ -322,8 +372,8 @@ export default function WorkspaceDashboardPage() {
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground p-6">
-                  <CheckCircle2 className="size-8 opacity-40 mb-2" />
-                  <p className="text-xs font-medium">No tasks created yet</p>
+                  <CheckCircle2 className="size-8 text-muted-foreground mb-2" aria-hidden="true" />
+                  <p className="text-xs font-medium text-foreground">No tasks created yet</p>
                   <p className="text-[11px] text-muted-foreground mt-0.5">
                     Create tasks within your projects to see recent activity here.
                   </p>
@@ -334,46 +384,51 @@ export default function WorkspaceDashboardPage() {
         </div>
 
         {/* Right Column: Projects & Team Members */}
-        <div className="space-y-6">
+        <div className="space-y-5">
           {/* Projects Card */}
-          <Card className="rounded-2xl border border-border/80 shadow-xs">
+          <Card className="rounded-xl border border-border/50">
             <CardHeader className="flex flex-row items-center justify-between pb-3">
               <div>
-                <CardTitle className="text-sm font-bold flex items-center gap-2">
-                  <FolderKanban className="size-4 text-primary" />
-                  <span>Projects</span>
+                <CardTitle>
+                  <h2 className="text-sm font-semibold flex items-center gap-2">
+                    <FolderKanban className="size-4 text-brand-text" aria-hidden="true" />
+                    <span>Projects</span>
+                  </h2>
                 </CardTitle>
                 <CardDescription className="text-xs">
                   Active projects in this workspace.
                 </CardDescription>
               </div>
-              <Badge variant="outline" className="text-[11px]">
+              <Badge
+                variant="outline"
+                className="text-[11px] rounded-md px-2 py-0.5 border-border/70 tabular-nums"
+              >
                 {projectsList.length}
               </Badge>
             </CardHeader>
             <CardContent className="space-y-2">
               {projectsList.length > 0 ? (
-                <div className="flex flex-col gap-2">
-                  {projectsList.map((p: any) => (
+                <div className="flex flex-col gap-1.5">
+                  {projectsList.map((p: Project & { _count?: { tasks?: number } }) => (
                     <Link
                       key={p.id}
                       href={`/dashboard/${workspaceSlug}/projects/${p.slug}`}
-                      className="flex items-center justify-between p-2.5 rounded-xl border border-border/60 hover:border-border hover:bg-muted/30 transition-all duration-150 group"
+                      className="flex items-center justify-between p-2.5 rounded-lg border border-input hover:border-border hover:bg-muted/35 transition-colors duration-150 group"
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">
+                        <div className="size-8 rounded-md bg-primary/10 text-brand-text flex items-center justify-center text-xs font-semibold shrink-0 border border-primary/15">
                           {p.name.substring(0, 2).toUpperCase()}
                         </div>
                         <div className="flex flex-col min-w-0">
-                          <span className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors truncate">
+                          <span className="text-xs font-medium text-foreground group-hover:text-brand-text transition-colors truncate">
                             {p.name}
                           </span>
-                          <span className="text-[10px] text-muted-foreground">
+                          <span className="text-[10px] text-muted-foreground tabular-nums">
                             {p._count?.tasks ?? 0} tasks
                           </span>
                         </div>
                       </div>
-                      <ArrowRight className="size-3.5 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all shrink-0" />
+                      <ArrowRight className="size-3.5 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all shrink-0" aria-hidden="true" />
                     </Link>
                   ))}
                 </div>
@@ -386,27 +441,29 @@ export default function WorkspaceDashboardPage() {
           </Card>
 
           {/* Team Members & Avatar Stack Card */}
-          <Card className="rounded-2xl border border-border/80 shadow-xs">
+          <Card className="rounded-xl border border-border/50">
             <CardHeader className="flex flex-row items-center justify-between pb-3">
               <div>
-                <CardTitle className="text-sm font-bold flex items-center gap-2">
-                  <Users className="size-4 text-primary" />
-                  <span>Team Members</span>
+                <CardTitle>
+                  <h2 className="text-sm font-semibold flex items-center gap-2">
+                    <Users className="size-4 text-brand-text" aria-hidden="true" />
+                    <span>Team Members</span>
+                  </h2>
                 </CardTitle>
                 <CardDescription className="text-xs">
                   Collaborators in {workspace.name}.
                 </CardDescription>
               </div>
-              <Link href={`/dashboard/${workspaceSlug}/members`}>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-xs gap-1 h-7 rounded-lg cursor-pointer"
-                >
-                  <span>View All</span>
-                  <ArrowRight className="size-3" />
-                </Button>
-              </Link>
+              <Button
+                variant="ghost"
+                size="sm"
+                nativeButton={false}
+                render={<Link href={`/dashboard/${workspaceSlug}/members`} />}
+                className="text-xs gap-1 h-7 rounded-lg"
+              >
+                <span>View All</span>
+                <ArrowRight className="size-3" />
+              </Button>
             </CardHeader>
             <CardContent>
               {/* Avatar Stack */}
@@ -430,20 +487,20 @@ export default function WorkspaceDashboardPage() {
                         {m.user?.image && (
                           <AvatarImage src={m.user.image} alt={name} />
                         )}
-                        <AvatarFallback className="text-[10px] font-bold bg-primary/10 text-primary">
+                        <AvatarFallback className="text-[10px] font-semibold bg-primary/15 text-brand-text">
                           {initials}
                         </AvatarFallback>
                       </Avatar>
                     );
                   })}
                   {members.length > 5 && (
-                    <div className="flex items-center justify-center size-8 rounded-full bg-muted text-[10px] font-bold text-muted-foreground ring-2 ring-background">
+                    <div className="flex items-center justify-center size-8 rounded-full bg-muted text-[10px] font-semibold text-muted-foreground ring-2 ring-background tabular-nums">
                       +{members.length - 5}
                     </div>
                   )}
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  <span className="font-semibold text-foreground">
+                  <span className="font-semibold text-foreground tabular-nums">
                     {members.length}
                   </span>{" "}
                   {members.length === 1 ? "member" : "members"} collaborating
@@ -462,7 +519,7 @@ export default function WorkspaceDashboardPage() {
           onOpenChange={(open) => !open && setSelectedTask(null)}
           workspaceId={workspace.id}
           projectId={selectedTask.projectId || selectedTask.project?.id || ""}
-          userRole={workspace.role as any}
+          userRole={workspace.role as WorkspaceRoleType}
           currentUserId={user?.id}
         />
       )}

@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useId } from "react";
 import { en } from "@/locales/en";
 import Link from "next/link";
 import { useForm, Controller } from "react-hook-form";
@@ -39,6 +39,11 @@ export const SignInCard = () => {
     ? `/sign-up?callbackUrl=${encodeURIComponent(rawCallbackUrl)}`
     : "/sign-up";
 
+  const emailId = useId();
+  const emailErrorId = useId();
+  const passwordId = useId();
+  const passwordErrorId = useId();
+
   const form = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -53,9 +58,13 @@ export const SignInCard = () => {
         toast.success(en.auth.signIn.toastSuccess);
         router.push(callbackUrl);
       },
-      onError: (error: any) => {
-        form.setError("root", { message: error.message });
-        toast.error(error.message || en.auth.signIn.toastErrorFallback);
+      onError: (error: unknown) => {
+        const message =
+          error instanceof Error
+            ? error.message
+            : en.auth.signIn.toastErrorFallback;
+        form.setError("root", { message });
+        toast.error(message);
       },
     });
   };
@@ -71,40 +80,50 @@ export const SignInCard = () => {
   };
 
   return (
-    <Card className="w-full h-full md:w-[487px] border-none shadow-none">
-      <CardHeader className="flex flex-col items-center justify-center text-center p-7">
-        <CardTitle className="text-2xl font-bold text-foreground">
+    <Card className="w-full md:w-[440px] rounded-xl border border-border/80 bg-card shadow-xl">
+      <CardHeader className="flex flex-col items-center justify-center text-center p-6 pb-4">
+        <CardTitle className="text-xl font-semibold tracking-tight text-foreground">
           {en.auth.signIn.title}
         </CardTitle>
-        <CardDescription className="text-muted-foreground mt-1.5">
+        <CardDescription className="text-xs text-muted-foreground mt-1">
           {en.auth.signIn.description}
         </CardDescription>
       </CardHeader>
-      <div className="px-7">
+      <div className="px-6">
         <Separator />
       </div>
-      <CardContent className="p-7">
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <CardContent className="p-6">
+        <form onSubmit={form.handleSubmit(onSubmit)} noValidate className="space-y-4">
           {form.formState.errors.root && (
-            <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-xs font-medium">
+            <div
+              role="alert"
+              className="p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive-text text-xs font-medium"
+            >
               {form.formState.errors.root.message}
             </div>
           )}
-          <FieldGroup>
+          <FieldGroup className="space-y-3.5">
             <Controller
               control={form.control}
               name="email"
               render={({ field, fieldState }) => (
                 <Field invalid={!!fieldState.error}>
-                  <FieldLabel>{en.auth.signIn.emailLabel}</FieldLabel>
+                  <FieldLabel htmlFor={emailId} className="text-xs font-medium">
+                    {en.auth.signIn.emailLabel}
+                  </FieldLabel>
                   <Input
+                    id={emailId}
                     type="email"
+                    autoComplete="email"
                     placeholder={en.auth.signIn.emailPlaceholder}
-                    className="w-full"
+                    className="w-full h-9 rounded-lg text-xs"
                     aria-invalid={!!fieldState.error}
+                    aria-describedby={fieldState.error ? emailErrorId : undefined}
                     {...field}
                   />
-                  <FieldError>{fieldState.error?.message}</FieldError>
+                  <FieldError id={emailErrorId}>
+                    {fieldState.error?.message}
+                  </FieldError>
                 </Field>
               )}
             />
@@ -113,22 +132,28 @@ export const SignInCard = () => {
               name="password"
               render={({ field, fieldState }) => (
                 <Field invalid={!!fieldState.error}>
-                  <FieldLabel>{en.auth.signIn.passwordLabel}</FieldLabel>
+                  <FieldLabel htmlFor={passwordId} className="text-xs font-medium">
+                    {en.auth.signIn.passwordLabel}
+                  </FieldLabel>
                   <Input
+                    id={passwordId}
                     type="password"
+                    autoComplete="current-password"
                     placeholder={en.auth.signIn.passwordPlaceholder}
-                    className="w-full"
+                    className="w-full h-9 rounded-lg text-xs"
                     aria-invalid={!!fieldState.error}
+                    aria-describedby={fieldState.error ? passwordErrorId : undefined}
                     {...field}
                   />
-                  <FieldError>{fieldState.error?.message}</FieldError>
+                  <FieldError id={passwordErrorId}>
+                    {fieldState.error?.message}
+                  </FieldError>
                 </Field>
               )}
             />
             <Button
               type="submit"
-              size="lg"
-              className="w-full cursor-pointer"
+              className="w-full h-9 rounded-lg text-xs font-medium cursor-pointer"
               disabled={loginMutation.isPending}
             >
               {loginMutation.isPending
@@ -136,34 +161,35 @@ export const SignInCard = () => {
                 : en.auth.signIn.submitButton}
             </Button>
 
-            <div className="relative my-1 flex items-center justify-center">
-              <span className="bg-card px-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <div className="relative my-1 flex items-center gap-3">
+              <div className="h-px flex-1 bg-border/80" />
+              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                 or
               </span>
+              <div className="h-px flex-1 bg-border/80" />
             </div>
 
             <Button
               type="button"
               variant="outline"
-              size="lg"
               onClick={handleDemoAccess}
-              className="w-full cursor-pointer gap-2 border-primary/30 bg-primary/5 text-primary hover:bg-primary/10 font-semibold"
+              className="w-full h-9 rounded-lg text-xs cursor-pointer gap-2 border-primary/35 bg-primary/10 text-brand-text hover:bg-primary/15 font-medium"
             >
-              <Sparkles className="size-4" />
+              <Sparkles className="size-3.5" />
               Instant Demo Sandbox Access
             </Button>
           </FieldGroup>
         </form>
       </CardContent>
-      <div className="px-7">
+      <div className="px-6">
         <Separator />
       </div>
-      <CardContent className="p-7 flex justify-center text-center">
-        <p className="text-sm text-muted-foreground">
+      <CardContent className="p-5 flex justify-center text-center">
+        <p className="text-xs text-muted-foreground">
           {en.auth.signIn.footer}{" "}
           <Link
             href={signUpUrl}
-            className="text-blue-600 dark:text-blue-400 hover:underline"
+            className="text-brand-text font-medium hover:underline"
           >
             {en.auth.signIn.footerLink}
           </Link>
