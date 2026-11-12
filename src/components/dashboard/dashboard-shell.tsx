@@ -1,13 +1,18 @@
 "use client";
 
-import { useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import dynamic from "next/dynamic";
 import { useParams } from "next/navigation";
 import { Sidebar } from "./sidebar";
 import { Navbar } from "./navbar";
-import { CommandPalette } from "./command-palette";
 import { NetworkStatusBanner } from "@/components/shared/network-status-banner";
 import { useWorkspaces } from "@/features/workspace/hooks/use-workspaces";
 import { useWorkspaceRealtimeSync } from "@/features/workspace/hooks/use-workspace-realtime-sync";
+
+const CommandPalette = dynamic(
+  () => import("./command-palette").then((mod) => mod.CommandPalette),
+  { ssr: false }
+);
 
 const subscribeDesktopMedia = (callback: () => void) => {
   if (typeof window === "undefined") return () => {};
@@ -38,6 +43,24 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
   const [desktopOpen, setDesktopOpen] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
+  const [hasOpenedCommand, setHasOpenedCommand] = useState(false);
+
+  const openCommandPalette = () => {
+    setHasOpenedCommand(true);
+    setCommandOpen(true);
+  };
+
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if ((e.key === "k" || e.key === "K") && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setHasOpenedCommand(true);
+        setCommandOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", down);
+    return () => window.removeEventListener("keydown", down);
+  }, []);
   const sidebarTriggerRef = useRef<HTMLButtonElement | null>(null);
   const isDesktop = useSyncExternalStore(
     subscribeDesktopMedia,
@@ -82,7 +105,7 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
         isDesktop={isDesktop}
         onClose={() => setMobileOpen(false)}
         onReturnFocus={() => sidebarTriggerRef.current?.focus()}
-        onOpenCommandPalette={() => setCommandOpen(true)}
+        onOpenCommandPalette={openCommandPalette}
       />
 
       <div className="flex flex-1 flex-col min-w-0 lg:py-2 lg:pr-2">
@@ -91,7 +114,7 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
           <Navbar
             user={user}
             onOpenSidebar={handleToggleSidebar}
-            onOpenCommandPalette={() => setCommandOpen(true)}
+            onOpenCommandPalette={openCommandPalette}
             showSidebarTrigger={true}
             sidebarExpanded={sidebarExpanded}
             sidebarTriggerRef={sidebarTriggerRef}
@@ -106,7 +129,9 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
         </div>
       </div>
 
-      <CommandPalette open={commandOpen} onOpenChange={setCommandOpen} />
+      {hasOpenedCommand && (
+        <CommandPalette open={commandOpen} onOpenChange={setCommandOpen} />
+      )}
     </div>
   );
 }

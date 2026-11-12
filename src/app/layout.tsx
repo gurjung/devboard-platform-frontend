@@ -7,7 +7,8 @@ import { AuthProvider } from "@/features/auth/context/auth-context";
 import { ThemeProvider } from "@/components/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
-import { SimulationProvider, SimulationFloatingDock } from "@/features/simulation";
+import { SimulationProvider } from "@/features/simulation/context/simulation-context";
+import { SimulationDockGate } from "@/features/simulation/components/simulation-dock-gate";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -60,7 +61,7 @@ export default function RootLayout({
               <TooltipProvider>
                 <SimulationProvider>
                   {children}
-                  <SimulationFloatingDock />
+                  <SimulationDockGate />
                   <Toaster />
                 </SimulationProvider>
               </TooltipProvider>

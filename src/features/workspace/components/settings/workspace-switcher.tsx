@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import dynamic from "next/dynamic";
 import { useParams, useRouter } from "next/navigation";
 import { Building2, Plus } from "lucide-react";
 import { en } from "@/locales/en";
@@ -15,12 +16,21 @@ import {
 } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useWorkspaces } from "../../hooks/use-workspaces";
-import { CreateWorkspaceDialog } from "./create-workspace-dialog";
+
+const CreateWorkspaceDialog = dynamic(
+  () =>
+    import("./create-workspace-dialog").then(
+      (mod) => mod.CreateWorkspaceDialog
+    ),
+  { ssr: false }
+);
 
 export function WorkspaceSwitcher() {
   const router = useRouter();
   const params = useParams();
   const activeSlug = params?.workspaceSlug as string | undefined;
+  const [createOpen, setCreateOpen] = React.useState(false);
+  const [hasOpenedCreate, setHasOpenedCreate] = React.useState(false);
 
   const { data: workspaces, isLoading } = useWorkspaces();
 
@@ -41,15 +51,23 @@ export function WorkspaceSwitcher() {
         <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
           {en.workspace.switcher.sectionTitle}
         </p>
-        <CreateWorkspaceDialog>
-          <button
-            type="button"
-            className="size-6 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-sidebar-accent transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-ring outline-none"
-            aria-label={en.workspace.switcher.createTooltip}
-          >
-            <Plus className="size-3.5" aria-hidden="true" />
-          </button>
-        </CreateWorkspaceDialog>
+        <button
+          type="button"
+          onClick={() => {
+            setHasOpenedCreate(true);
+            setCreateOpen(true);
+          }}
+          className="size-6 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-sidebar-accent transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-ring outline-none"
+          aria-label={en.workspace.switcher.createTooltip}
+        >
+          <Plus className="size-3.5" aria-hidden="true" />
+        </button>
+        {hasOpenedCreate && (
+          <CreateWorkspaceDialog
+            open={createOpen}
+            onOpenChange={setCreateOpen}
+          />
+        )}
       </div>
 
       <Select

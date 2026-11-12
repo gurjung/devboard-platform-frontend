@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Plus, FolderKanban } from "lucide-react";
@@ -8,9 +9,14 @@ import { cn } from "@/lib/utils";
 import { en } from "@/locales/en";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProjectAvatar } from "./project-avatar";
-import { CreateProjectDialog } from "./create-project-dialog";
 import { useProjects } from "../hooks/use-projects";
 import type { WorkspaceRole } from "@/features/workspace/types";
+
+const CreateProjectDialog = dynamic(
+  () =>
+    import("./create-project-dialog").then((mod) => mod.CreateProjectDialog),
+  { ssr: false }
+);
 
 interface ProjectsSidebarListProps {
   workspaceId?: string;
@@ -27,6 +33,8 @@ export function ProjectsSidebarList({
 }: ProjectsSidebarListProps) {
   const pathname = usePathname();
   const { data: projects, isLoading } = useProjects(workspaceId);
+  const [createOpen, setCreateOpen] = React.useState(false);
+  const [hasOpenedCreate, setHasOpenedCreate] = React.useState(false);
 
   const canCreate =
     currentUserRole === "OWNER" || currentUserRole === "ADMIN";
@@ -43,18 +51,27 @@ export function ProjectsSidebarList({
           {en.project.switcher.sectionTitle}
         </span>
         {canCreate && (
-          <CreateProjectDialog
-            workspaceId={workspaceId}
-            workspaceSlug={workspaceSlug}
-          >
+          <>
             <button
               type="button"
+              onClick={() => {
+                setHasOpenedCreate(true);
+                setCreateOpen(true);
+              }}
               className="size-6 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-sidebar-accent cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-ring outline-none"
               aria-label={en.project.switcher.createTooltip}
             >
               <Plus className="size-3.5" aria-hidden="true" />
             </button>
-          </CreateProjectDialog>
+            {hasOpenedCreate && (
+              <CreateProjectDialog
+                workspaceId={workspaceId}
+                workspaceSlug={workspaceSlug}
+                open={createOpen}
+                onOpenChange={setCreateOpen}
+              />
+            )}
+          </>
         )}
       </div>
 

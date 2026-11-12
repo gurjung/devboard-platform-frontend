@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { isDemoMode } from "@/features/simulation/mock-demo-data";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -7,8 +7,16 @@ const supabaseKey =
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
   "";
 
-export const supabase =
-  supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
+let cachedSupabaseClient: SupabaseClient | null = null;
+
+async function getSupabaseClient(): Promise<SupabaseClient | null> {
+  if (!supabaseUrl || !supabaseKey) return null;
+  if (!cachedSupabaseClient) {
+    const { createClient } = await import("@supabase/supabase-js");
+    cachedSupabaseClient = createClient(supabaseUrl, supabaseKey);
+  }
+  return cachedSupabaseClient;
+}
 
 export const WORKSPACE_IMAGES_BUCKET = "workspace-images";
 export const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png"];
@@ -48,13 +56,16 @@ export async function uploadWorkspaceLogo(file: File): Promise<string> {
     return readFileAsDataUrl(file);
   }
 
+  const supabase = await getSupabaseClient();
   if (!supabase) {
     throw new Error(
-      "Supabase is not configured. Please provide NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY (or ANON_KEY) in .env.local."
+      "Supabase is not configured. Please provide NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY (or ANON_KEY) in .env.local.",
     );
   }
 
-  const fileExt = file.name.split(".").pop()?.toLowerCase() || (file.type === "image/png" ? "png" : "jpg");
+  const fileExt =
+    file.name.split(".").pop()?.toLowerCase() ||
+    (file.type === "image/png" ? "png" : "jpg");
   const fileName = `${crypto.randomUUID()}.${fileExt}`;
 
   const { error: uploadError } = await supabase.storage

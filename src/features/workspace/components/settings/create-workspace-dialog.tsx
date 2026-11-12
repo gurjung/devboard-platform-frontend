@@ -5,7 +5,6 @@ import { useId, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import imageCompression from "browser-image-compression";
 import { toast } from "sonner";
 import { Loader2, Upload, X, ImageIcon } from "lucide-react";
 import { en } from "@/locales/en";
@@ -116,6 +115,9 @@ export function CreateWorkspaceDialog({
         useWebWorker: true,
       };
 
+      const { default: imageCompression } = await import(
+        "browser-image-compression"
+      );
       const compressedFile = await imageCompression(file, options);
       setLogoFile(compressedFile);
 

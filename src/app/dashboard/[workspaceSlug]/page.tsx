@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
@@ -29,8 +30,15 @@ import type { Project } from "@/features/projects/types";
 import { TaskStatusBadge } from "@/features/tasks/components/task-status-badge";
 import { TaskPriorityBadge } from "@/features/tasks/components/task-priority-badge";
 import { TaskAssigneeAvatar } from "@/features/tasks/components/task-assignee-avatar";
-import { EditTaskDialog } from "@/features/tasks/components/edit-task-dialog";
 import { getShortTaskKey } from "@/features/tasks/constants";
+
+const EditTaskDialog = dynamic(
+  () =>
+    import("@/features/tasks/components/edit-task-dialog").then(
+      (mod) => mod.EditTaskDialog
+    ),
+  { ssr: false }
+);
 import type { Task } from "@/features/tasks/types";
 import { useAuth } from "@/features/auth/context/auth-context";
 import { en } from "@/locales/en";

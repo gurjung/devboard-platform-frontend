@@ -1,6 +1,7 @@
 "use client";
 
 import React, { use, useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -24,20 +25,29 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import type {
+  Task,
+  TaskStatus,
+  TaskPriority,
+} from "@/features/tasks/types";
+import { useMyTasks } from "@/features/tasks/hooks/use-my-tasks";
+import { useUpdateTask } from "@/features/tasks/hooks/use-update-task";
+import { useDeleteTask } from "@/features/tasks/hooks/use-delete-task";
+import { MyTasksTable } from "@/features/tasks/components/my-tasks-table";
 import {
-  type Task,
-  type TaskStatus,
-  type TaskPriority,
-  useMyTasks,
-  useUpdateTask,
-  useDeleteTask,
-  MyTasksTable,
-  EditTaskDialog,
   TASK_STATUSES,
   TASK_STATUS_CONFIG,
   TASK_PRIORITIES,
   TASK_PRIORITY_CONFIG,
-} from "@/features/tasks";
+} from "@/features/tasks/constants";
+
+const EditTaskDialog = dynamic(
+  () =>
+    import("@/features/tasks/components/edit-task-dialog").then(
+      (mod) => mod.EditTaskDialog
+    ),
+  { ssr: false }
+);
 import type { WorkspaceRole } from "@/features/workspace/types";
 import { cn } from "@/lib/utils";
 import { TourSpotlightWrapper } from "@/features/simulation/components/tour-spotlight-wrapper";

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { use, useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -17,25 +18,53 @@ import { ProjectAvatar } from "@/features/projects/components/project-avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { WorkspaceRole } from "@/features/workspace/types";
-import {
-  type Task,
-  type TaskStatus,
-  type TaskPriority,
-  type TaskFilters,
-  type TaskView,
-  useTasks,
-  useUpdateTask,
-  useDeleteTask,
-  useTaskRealtimeSync,
-  ViewSelector,
-  TaskFilterBar,
-  TaskTableView,
-  TaskKanbanView,
-  TaskCalendarView,
-  CreateTaskDialog,
-  EditTaskDialog,
-} from "@/features/tasks";
+import type {
+  Task,
+  TaskStatus,
+  TaskPriority,
+  TaskFilters,
+  TaskView,
+} from "@/features/tasks/types";
+import { useTasks } from "@/features/tasks/hooks/use-tasks";
+import { useUpdateTask } from "@/features/tasks/hooks/use-update-task";
+import { useDeleteTask } from "@/features/tasks/hooks/use-delete-task";
+import { useTaskRealtimeSync } from "@/features/tasks/hooks/use-task-realtime-sync";
+import { ViewSelector } from "@/features/tasks/components/view-selector";
+import { TaskFilterBar } from "@/features/tasks/components/task-filter-bar";
+import { TaskTableView } from "@/features/tasks/components/task-table-view";
 import { TourSpotlightWrapper } from "@/features/simulation/components/tour-spotlight-wrapper";
+
+const TaskKanbanView = dynamic(
+  () =>
+    import("@/features/tasks/components/task-kanban-view").then(
+      (mod) => mod.TaskKanbanView
+    ),
+  { ssr: false }
+);
+
+const TaskCalendarView = dynamic(
+  () =>
+    import("@/features/tasks/components/task-calendar-view").then(
+      (mod) => mod.TaskCalendarView
+    ),
+  { ssr: false }
+);
+
+const CreateTaskDialog = dynamic(
+  () =>
+    import("@/features/tasks/components/create-task-dialog").then(
+      (mod) => mod.CreateTaskDialog
+    ),
+  { ssr: false }
+);
+
+const EditTaskDialog = dynamic(
+  () =>
+    import("@/features/tasks/components/edit-task-dialog").then(
+      (mod) => mod.EditTaskDialog
+    ),
+  { ssr: false }
+);
 
 interface ProjectPageProps {
   params: Promise<{
@@ -334,24 +363,28 @@ export default function ProjectHomePage({ params }: ProjectPageProps) {
       {/* Dialogs */}
       {currentWorkspace && project && (
         <>
-          <CreateTaskDialog
-            open={isCreateOpen}
-            onOpenChange={setIsCreateOpen}
-            workspaceId={currentWorkspace.id}
-            projectId={project.id}
-            defaultStatus={createDefaultStatus}
-            defaultDueDate={createDefaultDueDate}
-          />
+          {isCreateOpen && (
+            <CreateTaskDialog
+              open={isCreateOpen}
+              onOpenChange={setIsCreateOpen}
+              workspaceId={currentWorkspace.id}
+              projectId={project.id}
+              defaultStatus={createDefaultStatus}
+              defaultDueDate={createDefaultDueDate}
+            />
+          )}
 
-          <EditTaskDialog
-            task={editingTask}
-            open={isEditOpen}
-            onOpenChange={setIsEditOpen}
-            workspaceId={currentWorkspace.id}
-            projectId={project.id}
-            userRole={role}
-            currentUserId={user?.id}
-          />
+          {editingTask && (
+            <EditTaskDialog
+              task={editingTask}
+              open={isEditOpen}
+              onOpenChange={setIsEditOpen}
+              workspaceId={currentWorkspace.id}
+              projectId={project.id}
+              userRole={role}
+              currentUserId={user?.id}
+            />
+          )}
         </>
       )}
     </div>

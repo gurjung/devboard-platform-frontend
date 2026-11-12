@@ -26,7 +26,7 @@ import { useLogin } from "@/features/auth/hooks/use-login";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Sparkles } from "lucide-react";
-import { useSimulation } from "@/features/simulation";
+import { useSimulation } from "@/features/simulation/context/simulation-context";
 
 export const SignInCard = () => {
   const { launchInstantDemo } = useSimulation();

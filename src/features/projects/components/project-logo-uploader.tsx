@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useId, useRef, useState } from "react";
-import imageCompression from "browser-image-compression";
 import { toast } from "sonner";
 import { Loader2, Upload, X, ImageIcon } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -60,6 +59,9 @@ export function ProjectLogoUploader({
         useWebWorker: true,
       };
 
+      const { default: imageCompression } = await import(
+        "browser-image-compression"
+      );
       const compressedFile = await imageCompression(file, options);
 
       if (previewUrl && previewUrl !== initialLogoUrl) {

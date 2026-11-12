@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import dynamic from "next/dynamic";
 import { useParams, useRouter } from "next/navigation";
 import { Plus, FolderKanban } from "lucide-react";
 import { en } from "@/locales/en";
@@ -14,15 +15,22 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ProjectAvatar } from "./project-avatar";
-import { CreateProjectDialog } from "./create-project-dialog";
 import { useProjects } from "../hooks/use-projects";
 import { useWorkspaces } from "@/features/workspace/hooks/use-workspaces";
+
+const CreateProjectDialog = dynamic(
+  () =>
+    import("./create-project-dialog").then((mod) => mod.CreateProjectDialog),
+  { ssr: false }
+);
 
 export function ProjectSwitcher() {
   const router = useRouter();
   const params = useParams();
   const workspaceSlug = params?.workspaceSlug as string | undefined;
   const projectSlug = params?.projectSlug as string | undefined;
+  const [createOpen, setCreateOpen] = React.useState(false);
+  const [hasOpenedCreate, setHasOpenedCreate] = React.useState(false);
 
   const { data: workspaces } = useWorkspaces();
   const currentWorkspace = React.useMemo(() => {
@@ -60,18 +68,27 @@ export function ProjectSwitcher() {
           {en.project.switcher.sectionTitle}
         </p>
         {canCreate && (
-          <CreateProjectDialog
-            workspaceId={currentWorkspace.id}
-            workspaceSlug={currentWorkspace.slug}
-          >
+          <>
             <button
               type="button"
+              onClick={() => {
+                setHasOpenedCreate(true);
+                setCreateOpen(true);
+              }}
               className="size-6 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/70 transition cursor-pointer focus-visible:ring-2 focus-visible:ring-ring outline-none"
               aria-label={en.project.switcher.createTooltip}
             >
               <Plus className="size-3.5" aria-hidden="true" />
             </button>
-          </CreateProjectDialog>
+            {hasOpenedCreate && (
+              <CreateProjectDialog
+                workspaceId={currentWorkspace.id}
+                workspaceSlug={currentWorkspace.slug}
+                open={createOpen}
+                onOpenChange={setCreateOpen}
+              />
+            )}
+          </>
         )}
       </div>
 

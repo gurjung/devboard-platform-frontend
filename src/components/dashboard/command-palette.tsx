@@ -56,18 +56,6 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
 
   const { data: projects = [] } = useProjects(currentWorkspace?.id);
 
-  React.useEffect(() => {
-    const down = (e: KeyboardEvent) => {
-      if ((e.key === "k" || e.key === "K") && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault();
-        onOpenChange(!open);
-      }
-    };
-
-    window.addEventListener("keydown", down);
-    return () => window.removeEventListener("keydown", down);
-  }, [open, onOpenChange]);
-
   const runAction = React.useCallback(
     (action: () => void) => {
       onOpenChange(false);

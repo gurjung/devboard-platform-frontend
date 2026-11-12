@@ -22,12 +22,9 @@ import {
   StoryBanner,
 } from "../types";
 import { chaosController } from "../chaos-controller";
-import {
-  AVAILABLE_SCENARIOS,
-  AUTH_SCENARIOS,
-  DASHBOARD_SCENARIOS,
-} from "../scenarios";
 import { isDemoMode, setDemoMode, subscribeDemoMode } from "../mock-demo-data";
+
+type ScenariosModule = typeof import("../scenarios");
 
 interface SimulationContextType {
   scenarios: SimulationScenario[];
@@ -82,7 +79,28 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
   const workspaceSlug = params?.workspaceSlug as string | undefined;
   const projectSlug = params?.projectSlug as string | undefined;
 
-  const scenarios = isAuthenticated ? DASHBOARD_SCENARIOS : AUTH_SCENARIOS;
+  const [scenariosModule, setScenariosModule] = useState<ScenariosModule | null>(
+    null
+  );
+
+  useEffect(() => {
+    if (!isDemo || scenariosModule) return;
+    let cancelled = false;
+    import("../scenarios").then((mod) => {
+      if (!cancelled) {
+        setScenariosModule(mod);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isDemo, scenariosModule]);
+
+  const scenarios = scenariosModule
+    ? isAuthenticated
+      ? scenariosModule.DASHBOARD_SCENARIOS
+      : scenariosModule.AUTH_SCENARIOS
+    : [];
 
   const [activeScenario, setActiveScenario] = useState<SimulationScenario | null>(null);
   const [status, setStatus] = useState<SimulationStatus>("idle");
@@ -266,7 +284,13 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
 
   const runScenario = useCallback(
     async (scenarioId: string) => {
-      const targetScenario = AVAILABLE_SCENARIOS.find((s) => s.id === scenarioId);
+      const mod = scenariosModule ?? (await import("../scenarios"));
+      if (!scenariosModule) {
+        setScenariosModule(mod);
+      }
+      const targetScenario = mod.AVAILABLE_SCENARIOS.find(
+        (s) => s.id === scenarioId
+      );
       if (!targetScenario) {
         toast.error(`Scenario '${scenarioId}' not found.`);
         return;
@@ -368,7 +392,7 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
         setSpotlight(null);
       }
     },
-    [queryClient, router, workspaceSlug, projectSlug, addLog, cancellableSleep, updateChaosConfig, resetChaos, setSpotlight]
+    [scenariosModule, queryClient, router, workspaceSlug, projectSlug, addLog, cancellableSleep, updateChaosConfig, resetChaos, setSpotlight]
   );
 
   const triggerChaosPreset = useCallback(
