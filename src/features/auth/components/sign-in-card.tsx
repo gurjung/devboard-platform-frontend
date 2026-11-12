@@ -33,8 +33,15 @@ export const SignInCard = () => {
   const loginMutation = useLogin();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
   const rawCallbackUrl = searchParams.get("callbackUrl");
+  const callbackUrl =
+    rawCallbackUrl &&
+    rawCallbackUrl.startsWith("/") &&
+    !rawCallbackUrl.startsWith("//") &&
+    !rawCallbackUrl.startsWith("/sign-in") &&
+    !rawCallbackUrl.startsWith("/sign-up")
+      ? rawCallbackUrl
+      : "/dashboard";
   const signUpUrl = rawCallbackUrl
     ? `/sign-up?callbackUrl=${encodeURIComponent(rawCallbackUrl)}`
     : "/sign-up";
@@ -56,7 +63,7 @@ export const SignInCard = () => {
     loginMutation.mutate(data, {
       onSuccess: () => {
         toast.success(en.auth.signIn.toastSuccess);
-        router.push(callbackUrl);
+        router.replace(callbackUrl);
       },
       onError: (error: unknown) => {
         const message =

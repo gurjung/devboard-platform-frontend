@@ -19,6 +19,11 @@ const DEMO_REFRESHED_TOKEN = "demo-mock-jwt-token-refreshed";
 let inMemoryAccessToken: string | null = null;
 let refreshPromise: Promise<string | null> | null = null;
 let authFailureSubscribers: Array<() => void> = [];
+let authGeneration = 0;
+
+export const beginAuthTransition = () => {
+  authGeneration += 1;
+};
 
 export const getAccessToken = (): string | null => {
   if (inMemoryAccessToken) return inMemoryAccessToken;
@@ -35,6 +40,7 @@ export const getAccessToken = (): string | null => {
 };
 
 export const setAccessToken = (token: string | null) => {
+  authGeneration += 1;
   inMemoryAccessToken = token;
   if (typeof window !== "undefined") {
     try {
@@ -64,7 +70,9 @@ const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/, "") ||
   "https://devboard-platform-backend.onrender.com";
 
-export async function refreshAuthToken(): Promise<string | null> {
+export async function refreshAuthToken(options?: {
+  silent?: boolean;
+}): Promise<string | null> {
   if (isDemoMode()) {
     setAccessToken(DEMO_REFRESHED_TOKEN);
     return DEMO_REFRESHED_TOKEN;
@@ -73,6 +81,8 @@ export async function refreshAuthToken(): Promise<string | null> {
   if (refreshPromise) {
     return refreshPromise;
   }
+
+  const generationAtStart = authGeneration;
 
   refreshPromise = (async () => {
     try {
@@ -87,6 +97,10 @@ export async function refreshAuthToken(): Promise<string | null> {
       if (isDemoMode()) {
         setAccessToken(DEMO_REFRESHED_TOKEN);
         return DEMO_REFRESHED_TOKEN;
+      }
+
+      if (authGeneration !== generationAtStart) {
+        return getAccessToken();
       }
 
       if (!refreshResponse.ok) {
@@ -106,6 +120,10 @@ export async function refreshAuthToken(): Promise<string | null> {
         return DEMO_REFRESHED_TOKEN;
       }
 
+      if (authGeneration !== generationAtStart) {
+        return getAccessToken();
+      }
+
       setAccessToken(newAccessToken);
       return newAccessToken;
     } catch (refreshErr) {
@@ -113,7 +131,9 @@ export async function refreshAuthToken(): Promise<string | null> {
         setAccessToken(DEMO_REFRESHED_TOKEN);
         return DEMO_REFRESHED_TOKEN;
       }
-      notifyAuthFailure();
+      if (authGeneration === generationAtStart && !options?.silent) {
+        notifyAuthFailure();
+      }
       throw refreshErr;
     } finally {
       refreshPromise = null;

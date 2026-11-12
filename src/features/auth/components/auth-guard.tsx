@@ -15,9 +15,14 @@ export function AuthGuard({ children }: AuthGuardProps) {
   const pathname = usePathname();
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (
+      !isLoading &&
+      !isAuthenticated &&
+      !pathname.startsWith("/sign-in") &&
+      !pathname.startsWith("/sign-up")
+    ) {
       const callbackUrl = encodeURIComponent(pathname);
-      router.push(`/sign-in?callbackUrl=${callbackUrl}`);
+      router.replace(`/sign-in?callbackUrl=${callbackUrl}`);
     }
   }, [isLoading, isAuthenticated, router, pathname]);
 

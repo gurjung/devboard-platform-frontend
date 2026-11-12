@@ -14,6 +14,7 @@ import {
   getAccessToken,
   refreshAuthToken,
   onAuthFailure,
+  beginAuthTransition,
 } from "@/lib/api-client";
 import {
   DEMO_USER,
@@ -38,9 +39,11 @@ interface AuthContextType {
 interface AuthApiEnvelope {
   data?: {
     accessToken?: string;
+    token?: string;
     user?: User;
   } & Partial<User>;
   accessToken?: string;
+  token?: string;
   user?: User;
 }
 
@@ -70,7 +73,12 @@ function extractUserFromResponse(payload: unknown): User | null {
 function extractTokenFromResponse(payload: unknown): string | undefined {
   if (!payload || typeof payload !== "object") return undefined;
   const envelope = payload as AuthApiEnvelope;
-  return envelope.data?.accessToken || envelope.accessToken;
+  return (
+    envelope.data?.accessToken ||
+    envelope.accessToken ||
+    envelope.data?.token ||
+    envelope.token
+  );
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -112,8 +120,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      // Try refreshing session
-      const newToken = await refreshAuthToken();
+      // Try refreshing session (silent when no prior token existed to avoid clobbering concurrent logins)
+      const newToken = await refreshAuthToken({ silent: !existingToken });
       if (authEpochRef.current !== epoch || isDemoMode()) return;
 
       if (newToken) {
@@ -174,6 +182,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (credentials: LoginInput): Promise<AuthResponse> => {
     const epoch = ++authEpochRef.current;
+    beginAuthTransition();
     const response = await apiClient.post<AuthResponse>(
       "/auth/login",
       credentials,
@@ -181,23 +190,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     );
     const token = extractTokenFromResponse(response);
     let userData = extractUserFromResponse(response);
-    if (token && authEpochRef.current === epoch) {
-      setDemoMode(false);
+
+    setDemoMode(false);
+    if (token) {
       setAccessToken(token);
-      if (!userData) {
-        const meRes = await apiClient.get<unknown>("/auth/me");
-        userData = extractUserFromResponse(meRes);
-      }
-      if (authEpochRef.current === epoch) {
-        setUser(userData);
-        setIsLoading(false);
-      }
+    }
+
+    if (!userData) {
+      const meRes = await apiClient.get<unknown>("/auth/me");
+      userData = extractUserFromResponse(meRes);
+    }
+
+    if (!userData) {
+      throw new Error("Unable to establish user session. Please try again.");
+    }
+
+    if (authEpochRef.current === epoch) {
+      setUser(userData);
+      setIsLoading(false);
     }
     return response;
   };
 
   const register = async (data: RegisterInput): Promise<AuthResponse> => {
     const epoch = ++authEpochRef.current;
+    beginAuthTransition();
     const response = await apiClient.post<AuthResponse>(
       "/auth/register",
       data,
@@ -205,17 +222,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     );
     const token = extractTokenFromResponse(response);
     let userData = extractUserFromResponse(response);
-    if (token && authEpochRef.current === epoch) {
-      setDemoMode(false);
+
+    setDemoMode(false);
+    if (token) {
       setAccessToken(token);
-      if (!userData) {
-        const meRes = await apiClient.get<unknown>("/auth/me");
-        userData = extractUserFromResponse(meRes);
-      }
-      if (authEpochRef.current === epoch) {
-        setUser(userData);
-        setIsLoading(false);
-      }
+    }
+
+    if (!userData) {
+      const meRes = await apiClient.get<unknown>("/auth/me");
+      userData = extractUserFromResponse(meRes);
+    }
+
+    if (!userData) {
+      throw new Error("Unable to establish user session. Please try again.");
+    }
+
+    if (authEpochRef.current === epoch) {
+      setUser(userData);
+      setIsLoading(false);
     }
     return response;
   };
