@@ -161,8 +161,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     const unsubscribeDemo = subscribeDemoMode(() => {
-      authEpochRef.current += 1;
       if (isDemoMode()) {
+        authEpochRef.current += 1;
         if (!getAccessToken()) {
           setAccessToken("demo-mock-jwt-token");
         }
@@ -181,6 +181,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [refresh]);
 
   const login = async (credentials: LoginInput): Promise<AuthResponse> => {
+    if (isDemoMode()) {
+      setDemoMode(false);
+    }
     const epoch = ++authEpochRef.current;
     beginAuthTransition();
     const response = await apiClient.post<AuthResponse>(
@@ -191,7 +194,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const token = extractTokenFromResponse(response);
     let userData = extractUserFromResponse(response);
 
-    setDemoMode(false);
     if (token) {
       setAccessToken(token);
     }
@@ -213,6 +215,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const register = async (data: RegisterInput): Promise<AuthResponse> => {
+    if (isDemoMode()) {
+      setDemoMode(false);
+    }
     const epoch = ++authEpochRef.current;
     beginAuthTransition();
     const response = await apiClient.post<AuthResponse>(
@@ -223,10 +228,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const token = extractTokenFromResponse(response);
     let userData = extractUserFromResponse(response);
 
-    setDemoMode(false);
-    if (token) {
-      setAccessToken(token);
+    // Backend /auth/register creates the user without issuing an accessToken;
+    // automatically log in so the new user gets a valid session token.
+    if (!token) {
+      return await login({ email: data.email, password: data.password });
     }
+
+    setAccessToken(token);
 
     if (!userData) {
       const meRes = await apiClient.get<unknown>("/auth/me");
