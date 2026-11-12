@@ -76,6 +76,16 @@ export function CreateTaskDialog({
     },
   });
 
+  const memberNameById = React.useMemo(() => {
+    const map = new Map<string, string>();
+    for (const m of members) {
+      const id = m.user?.id || m.userId || m.id;
+      const label = m.user?.name || m.user?.email || "Member";
+      if (id) map.set(id, label);
+    }
+    return map;
+  }, [members]);
+
   // When defaultStatus or defaultDueDate changes when dialog opens
   React.useEffect(() => {
     if (open) {
@@ -119,7 +129,7 @@ export function CreateTaskDialog({
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4 pt-1">
         {/* Title Input */}
         <div className="space-y-1.5">
-          <Label htmlFor={titleId} className="text-xs font-semibold">
+          <Label htmlFor={titleId} className="text-xs font-medium text-foreground">
             {en.tasks.form.titleLabel}{" "}
             <span aria-hidden="true" className="text-destructive-text">
               *
@@ -128,7 +138,7 @@ export function CreateTaskDialog({
           <Input
             id={titleId}
             placeholder={en.tasks.form.titlePlaceholder}
-            className="text-sm rounded-lg"
+            className="h-9 text-sm rounded-lg bg-card border-input"
             disabled={createTaskMutation.isPending}
             aria-required="true"
             aria-invalid={!!errors.title}
@@ -145,14 +155,14 @@ export function CreateTaskDialog({
 
         {/* Description Textarea */}
         <div className="space-y-1.5">
-          <Label htmlFor={descriptionId} className="text-xs font-semibold">
+          <Label htmlFor={descriptionId} className="text-xs font-medium text-foreground">
             {en.tasks.form.descriptionLabel}
           </Label>
           <Textarea
             id={descriptionId}
             rows={3}
             placeholder={en.tasks.form.descriptionPlaceholder}
-            className="min-h-[84px] text-xs rounded-lg resize-y"
+            className="min-h-[84px] text-xs rounded-lg bg-card border-input resize-y"
             disabled={createTaskMutation.isPending}
             aria-invalid={!!errors.description}
             aria-describedby={errors.description ? descriptionErrorId : undefined}
@@ -169,49 +179,62 @@ export function CreateTaskDialog({
           )}
         </div>
 
-        {/* Status & Priority Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {/* Properties Grid */}
+        <div className="rounded-xl border border-border/70 bg-muted/20 p-3.5 grid grid-cols-1 sm:grid-cols-2 gap-3">
           {/* Status */}
           <div className="space-y-1.5">
             <Label
               id={statusLabelId}
               htmlFor={statusTriggerId}
-              className="text-xs font-semibold"
+              className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground"
             >
               {en.tasks.form.statusLabel}
             </Label>
             <Controller
               control={control}
               name="status"
-              render={({ field }) => (
-                <Select
-                  value={field.value}
-                  onValueChange={(val) => val && field.onChange(val)}
-                  disabled={createTaskMutation.isPending}
-                >
-                  <SelectTrigger
-                    id={statusTriggerId}
-                    aria-labelledby={statusLabelId}
-                    className="w-full h-8 rounded-lg text-xs"
+              render={({ field }) => {
+                const selectedStatus =
+                  TASK_STATUS_CONFIG[(field.value as TaskStatus) || "BACKLOG"] ||
+                  TASK_STATUS_CONFIG.BACKLOG;
+                const SelectedStatusIcon = selectedStatus.icon;
+                return (
+                  <Select
+                    value={field.value}
+                    onValueChange={(val) => val && field.onChange(val)}
+                    disabled={createTaskMutation.isPending}
                   >
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl">
-                    {TASK_STATUSES.map((st) => {
-                      const cfg = TASK_STATUS_CONFIG[st];
-                      const Icon = cfg.icon;
-                      return (
-                        <SelectItem key={st} value={st}>
-                          <div className="flex items-center gap-2 text-xs">
-                            <Icon className={`size-3.5 ${cfg.color}`} />
-                            <span>{cfg.label}</span>
-                          </div>
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
-              )}
+                    <SelectTrigger
+                      id={statusTriggerId}
+                      aria-labelledby={statusLabelId}
+                      className="w-full h-8 rounded-md text-xs bg-card border-input"
+                    >
+                      <SelectValue>
+                        <span className="inline-flex items-center gap-2 text-xs font-medium text-foreground truncate">
+                          <SelectedStatusIcon
+                            className={`size-3.5 shrink-0 ${selectedStatus.color}`}
+                          />
+                          <span className="truncate">{selectedStatus.label}</span>
+                        </span>
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      {TASK_STATUSES.map((st) => {
+                        const cfg = TASK_STATUS_CONFIG[st];
+                        const Icon = cfg.icon;
+                        return (
+                          <SelectItem key={st} value={st}>
+                            <div className="flex items-center gap-2 text-xs">
+                              <Icon className={`size-3.5 ${cfg.color}`} />
+                              <span>{cfg.label}</span>
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                );
+              }}
             />
           </div>
 
@@ -220,51 +243,64 @@ export function CreateTaskDialog({
             <Label
               id={priorityLabelId}
               htmlFor={priorityTriggerId}
-              className="text-xs font-semibold"
+              className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground"
             >
               {en.tasks.form.priorityLabel}
             </Label>
             <Controller
               control={control}
               name="priority"
-              render={({ field }) => (
-                <Select
-                  value={field.value}
-                  onValueChange={(val) => val && field.onChange(val)}
-                  disabled={createTaskMutation.isPending}
-                >
-                  <SelectTrigger
-                    id={priorityTriggerId}
-                    aria-labelledby={priorityLabelId}
-                    className="w-full h-8 rounded-lg text-xs"
+              render={({ field }) => {
+                const selectedPriority =
+                  TASK_PRIORITY_CONFIG[(field.value as TaskPriority) || "MEDIUM"] ||
+                  TASK_PRIORITY_CONFIG.MEDIUM;
+                const SelectedPriorityIcon = selectedPriority.icon;
+                return (
+                  <Select
+                    value={field.value}
+                    onValueChange={(val) => val && field.onChange(val)}
+                    disabled={createTaskMutation.isPending}
                   >
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl">
-                    {TASK_PRIORITIES.map((pr) => {
-                      const cfg = TASK_PRIORITY_CONFIG[pr];
-                      const Icon = cfg.icon;
-                      return (
-                        <SelectItem key={pr} value={pr}>
-                          <div className="flex items-center gap-2 text-xs">
-                            <Icon className={`size-3.5 ${cfg.color}`} />
-                            <span>{cfg.label}</span>
-                          </div>
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
-              )}
+                    <SelectTrigger
+                      id={priorityTriggerId}
+                      aria-labelledby={priorityLabelId}
+                      className="w-full h-8 rounded-md text-xs bg-card border-input"
+                    >
+                      <SelectValue>
+                        <span className="inline-flex items-center gap-2 text-xs font-medium text-foreground truncate">
+                          <SelectedPriorityIcon
+                            className={`size-3.5 shrink-0 ${selectedPriority.color}`}
+                          />
+                          <span className="truncate">{selectedPriority.label}</span>
+                        </span>
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      {TASK_PRIORITIES.map((pr) => {
+                        const cfg = TASK_PRIORITY_CONFIG[pr];
+                        const Icon = cfg.icon;
+                        return (
+                          <SelectItem key={pr} value={pr}>
+                            <div className="flex items-center gap-2 text-xs">
+                              <Icon className={`size-3.5 ${cfg.color}`} />
+                              <span>{cfg.label}</span>
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                );
+              }}
             />
           </div>
-        </div>
 
-        {/* Due Date & Assignee Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {/* Due Date */}
           <div className="space-y-1.5">
-            <Label htmlFor={dueDateId} className="text-xs font-semibold">
+            <Label
+              htmlFor={dueDateId}
+              className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground"
+            >
               {en.tasks.form.dueDateLabel}
             </Label>
             <div className="relative">
@@ -272,7 +308,7 @@ export function CreateTaskDialog({
                 id={dueDateId}
                 type="date"
                 min={format(new Date(), "yyyy-MM-dd")}
-                className="text-xs h-8 rounded-lg"
+                className="text-xs h-8 rounded-md bg-card border-input"
                 disabled={createTaskMutation.isPending}
                 {...register("dueDate")}
               />
@@ -284,51 +320,70 @@ export function CreateTaskDialog({
             <Label
               id={assigneeLabelId}
               htmlFor={assigneeTriggerId}
-              className="text-xs font-semibold"
+              className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground"
             >
               {en.tasks.form.assigneeLabel}
             </Label>
             <Controller
               control={control}
               name="assigneeId"
-              render={({ field }) => (
-                <Select
-                  value={field.value || "unassigned"}
-                  onValueChange={(val) => field.onChange(val === "unassigned" ? "" : val)}
-                  disabled={createTaskMutation.isPending || isMembersLoading}
-                >
-                  <SelectTrigger
-                    id={assigneeTriggerId}
-                    aria-labelledby={assigneeLabelId}
-                    className="w-full h-8 rounded-lg text-xs"
+              render={({ field }) => {
+                const selectedAssigneeName = field.value
+                  ? memberNameById.get(field.value)
+                  : null;
+                return (
+                  <Select
+                    value={field.value || "unassigned"}
+                    onValueChange={(val) =>
+                      field.onChange(val === "unassigned" ? "" : val)
+                    }
+                    disabled={createTaskMutation.isPending || isMembersLoading}
                   >
-                    <SelectValue placeholder={en.tasks.form.assigneePlaceholder} />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl">
-                    <SelectItem value="unassigned">
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <UserIcon className="size-3.5 text-muted-foreground" />
-                        <span>{en.tasks.unassigned}</span>
-                      </div>
-                    </SelectItem>
-                    {members.map((member) => (
-                      <SelectItem
-                        key={member.user?.id || member.id}
-                        value={member.user?.id || member.userId || member.id}
-                      >
-                        <div className="flex items-center gap-2 text-xs">
-                          <span className="font-medium">
-                            {member.user?.name || member.user?.email}
+                    <SelectTrigger
+                      id={assigneeTriggerId}
+                      aria-labelledby={assigneeLabelId}
+                      className="w-full h-8 rounded-md text-xs bg-card border-input"
+                    >
+                      <SelectValue placeholder={en.tasks.form.assigneePlaceholder}>
+                        {selectedAssigneeName ? (
+                          <span className="inline-flex items-center gap-2 text-xs font-medium text-foreground truncate">
+                            <UserIcon className="size-3.5 shrink-0 text-muted-foreground" />
+                            <span className="truncate">{selectedAssigneeName}</span>
                           </span>
-                          <span className="text-[10px] text-muted-foreground truncate">
-                            ({member.role})
+                        ) : (
+                          <span className="inline-flex items-center gap-2 text-xs text-muted-foreground truncate">
+                            <UserIcon className="size-3.5 shrink-0 text-muted-foreground" />
+                            <span className="truncate">{en.tasks.unassigned}</span>
                           </span>
+                        )}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      <SelectItem value="unassigned">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <UserIcon className="size-3.5 text-muted-foreground" />
+                          <span>{en.tasks.unassigned}</span>
                         </div>
                       </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
+                      {members.map((member) => (
+                        <SelectItem
+                          key={member.user?.id || member.id}
+                          value={member.user?.id || member.userId || member.id}
+                        >
+                          <div className="flex items-center gap-2 text-xs">
+                            <span className="font-medium">
+                              {member.user?.name || member.user?.email}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground truncate">
+                              ({member.role})
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                );
+              }}
             />
           </div>
         </div>

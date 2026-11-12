@@ -127,7 +127,15 @@ export function MemberCard({
                 aria-label={`Role for ${member.user?.name || member.user?.email || "member"}`}
                 className="w-28 h-8 px-2.5 bg-background border-input rounded-lg text-xs font-medium hover:border-border"
               >
-                <SelectValue />
+                <SelectValue>
+                  <span className="text-xs font-medium text-foreground">
+                    {member.role === WORKSPACE_ROLES.OWNER
+                      ? en.workspace.members.roles.owner
+                      : member.role === WORKSPACE_ROLES.ADMIN
+                        ? en.workspace.members.roles.admin
+                        : en.workspace.members.roles.member}
+                  </span>
+                </SelectValue>
               </SelectTrigger>
               <SelectContent className="min-w-36 p-1 rounded-xl border border-border/80">
                 {selectOptions.map((opt) => (

@@ -271,7 +271,13 @@ export function InviteMemberDialog({
                       aria-describedby={form.formState.errors.role ? roleErrorId : undefined}
                       className="w-full h-9 rounded-lg text-xs"
                     >
-                      <SelectValue placeholder={en.workspace.invite.dialog.rolePlaceholder} />
+                      <SelectValue placeholder={en.workspace.invite.dialog.rolePlaceholder}>
+                        <span className="text-xs font-medium text-foreground">
+                          {field.value === "ADMIN"
+                            ? en.workspace.invite.dialog.roleAdmin
+                            : en.workspace.invite.dialog.roleMember}
+                        </span>
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
                       <SelectItem value="MEMBER">

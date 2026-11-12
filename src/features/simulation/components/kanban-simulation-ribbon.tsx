@@ -28,36 +28,39 @@ export function KanbanSimulationRibbon() {
   }
 
   return (
-    <div className="mb-4 flex flex-col gap-2 transition-all duration-300">
+    <div className="mb-3 flex flex-col gap-2">
       {/* ─── Mode: Inactive Showcase Toolbar ─────────────────────────────── */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-3.5 rounded-2xl border border-primary/30 bg-gradient-to-r from-primary/10 via-background to-card shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="flex size-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-indigo-600 text-primary-foreground shadow-sm">
-            <Sparkles className="size-5" />
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-3 rounded-xl border border-border/70 bg-card/80 shadow-2xs">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-brand-text border border-primary/20 shrink-0">
+            <Sparkles className="size-4" aria-hidden="true" />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-foreground">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-semibold tracking-tight text-foreground">
                 DevBoard Product Walkthrough Lab
               </span>
-              <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-bold border-primary text-brand-text">
+              <Badge
+                variant="outline"
+                className="text-[10px] px-1.5 py-0 h-4.5 font-medium rounded-md border-primary/30 bg-primary/10 text-brand-text"
+              >
                 Interactive Tour
               </Badge>
             </div>
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
               Run the automated walkthrough to experience all flagship features side by side:
             </p>
           </div>
         </div>
 
         {/* Action Buttons: Full Tour + Individual Quick Demos */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5 shrink-0">
           <Button
             size="sm"
             onClick={() => runScenario("hiring-manager-showcase")}
-            className="cursor-pointer gap-2 text-xs font-bold bg-gradient-to-r from-primary to-indigo-600 text-primary-foreground shadow-md hover:opacity-95 ring-2 ring-primary/20"
+            className="h-8 px-3 cursor-pointer gap-1.5 text-xs font-medium rounded-lg shadow-2xs"
           >
-            <Sparkles className="size-3.5 fill-current animate-pulse" />
+            <Sparkles className="size-3.5" aria-hidden="true" />
             Start Full Product Walkthrough
           </Button>
 
@@ -65,9 +68,9 @@ export function KanbanSimulationRibbon() {
             variant="outline"
             size="sm"
             onClick={() => runScenario("happy-path-sprint")}
-            className="cursor-pointer gap-1.5 text-xs font-semibold border-border hover:bg-accent"
+            className="h-8 px-2.5 cursor-pointer gap-1.5 text-xs font-medium rounded-lg bg-background/60 dark:bg-card border-input hover:bg-accent"
           >
-            <Play className="size-3.5 fill-current text-brand-text" />
+            <Play className="size-3.5 fill-current text-brand-text" aria-hidden="true" />
             Sprint Lifecycle
           </Button>
 
@@ -75,9 +78,9 @@ export function KanbanSimulationRibbon() {
             variant="outline"
             size="sm"
             onClick={() => runScenario("fault-optimistic-rollback")}
-            className="cursor-pointer gap-1.5 text-xs font-semibold border-destructive/40 hover:bg-destructive/10 hover:text-destructive-text"
+            className="h-8 px-2.5 cursor-pointer gap-1.5 text-xs font-medium rounded-lg bg-background/60 dark:bg-card border-input hover:bg-destructive/10 hover:border-destructive/35 hover:text-destructive-text"
           >
-            <Flame className="size-3.5 text-destructive-text" />
+            <Flame className="size-3.5 text-destructive-text" aria-hidden="true" />
             Server Crash Rollback
           </Button>
 
@@ -85,9 +88,9 @@ export function KanbanSimulationRibbon() {
             variant="outline"
             size="sm"
             onClick={() => runScenario("fault-network-offline")}
-            className="cursor-pointer gap-1.5 text-xs font-semibold border-border hover:bg-accent"
+            className="h-8 px-2.5 cursor-pointer gap-1.5 text-xs font-medium rounded-lg bg-background/60 dark:bg-card border-input hover:bg-accent"
           >
-            <WifiOff className="size-3.5 text-muted-foreground" />
+            <WifiOff className="size-3.5 text-muted-foreground" aria-hidden="true" />
             Offline Resilience
           </Button>
         </div>

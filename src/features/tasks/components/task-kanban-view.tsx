@@ -109,23 +109,20 @@ function TaskCard({ task, onClick, isOverlay = false }: TaskCardProps) {
         isOverlay &&
           "scale-[1.02] shadow-xl border-primary ring-2 ring-primary/20 cursor-grabbing bg-card z-50",
         isHighlighted &&
-          "ring-4 ring-primary ring-offset-2 ring-offset-background border-primary shadow-xl scale-[1.02] bg-primary/10 z-30 animate-pulse"
+          "ring-2 ring-primary ring-offset-2 ring-offset-background border-primary shadow-lg bg-primary/10 z-30"
       )}
     >
       {/* Simulation Guided Spotlight Banner */}
       {isHighlighted && spotlightMessage && (
         <div
           role="status"
-          className="mb-2.5 -mx-1 -mt-1 rounded-md bg-primary px-2.5 py-1 text-[11px] font-bold text-primary-foreground shadow-sm flex items-center justify-between gap-1.5 animate-pulse"
+          className="mb-2.5 -mx-1 -mt-1 rounded-md bg-primary px-2.5 py-1 text-[11px] font-medium text-primary-foreground shadow-xs flex items-center justify-between gap-1.5"
         >
-          <span className="flex items-center gap-1.5">
-            <span className="relative flex size-2" aria-hidden="true">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-              <span className="relative inline-flex rounded-full size-2 bg-white"></span>
-            </span>
-            <span>{spotlightMessage}</span>
+          <span className="flex items-center gap-1.5 min-w-0">
+            <span className="inline-flex rounded-full size-1.5 shrink-0 bg-primary-foreground" aria-hidden="true" />
+            <span className="truncate">{spotlightMessage}</span>
           </span>
-          <span className="text-[9px] uppercase tracking-wider font-mono">
+          <span className="text-[9px] uppercase tracking-wider font-mono opacity-90 shrink-0">
             LIVE DEMO
           </span>
         </div>

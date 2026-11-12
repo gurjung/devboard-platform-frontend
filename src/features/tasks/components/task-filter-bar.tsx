@@ -63,6 +63,29 @@ export function TaskFilterBar({
 
   const quickMembers = members.slice(0, 5);
   const currentAssigneeFilter = filters.assigneeId || "ALL";
+  const currentStatusFilter = filters.status || "ALL";
+  const currentPriorityFilter = filters.priority || "ALL";
+
+  const selectedStatusConfig =
+    currentStatusFilter !== "ALL"
+      ? TASK_STATUS_CONFIG[currentStatusFilter]
+      : null;
+  const SelectedStatusIcon = selectedStatusConfig?.icon;
+
+  const selectedPriorityConfig =
+    currentPriorityFilter !== "ALL"
+      ? TASK_PRIORITY_CONFIG[currentPriorityFilter]
+      : null;
+  const SelectedPriorityIcon = selectedPriorityConfig?.icon;
+
+  const selectedMemberName = React.useMemo(() => {
+    if (currentAssigneeFilter === "ALL") return en.tasks.allAssignees;
+    if (currentAssigneeFilter === "UNASSIGNED") return en.tasks.unassigned;
+    const found = members.find(
+      (m) => (m.user?.id || m.userId || m.id) === currentAssigneeFilter
+    );
+    return found?.user?.name || found?.user?.email || en.tasks.allAssignees;
+  }, [currentAssigneeFilter, members]);
 
   return (
     <div className="flex flex-col gap-2.5 py-0.5">
@@ -132,7 +155,20 @@ export function TaskFilterBar({
               <span className="text-muted-foreground font-medium shrink-0">
                 {en.tasks.tableHeaders.status}:
               </span>
-              <SelectValue placeholder={en.tasks.filterByStatus} />
+              <SelectValue placeholder={en.tasks.filterByStatus}>
+                {selectedStatusConfig && SelectedStatusIcon ? (
+                  <span className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground truncate">
+                    <SelectedStatusIcon
+                      className={cn("size-3.5 shrink-0", selectedStatusConfig.color)}
+                    />
+                    <span className="truncate">{selectedStatusConfig.label}</span>
+                  </span>
+                ) : (
+                  <span className="text-xs font-medium text-foreground">
+                    {en.tasks.allStatuses}
+                  </span>
+                )}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent className="rounded-xl">
               <SelectItem value="ALL">
@@ -172,7 +208,20 @@ export function TaskFilterBar({
               <span className="text-muted-foreground font-medium shrink-0">
                 {en.tasks.tableHeaders.priority}:
               </span>
-              <SelectValue placeholder={en.tasks.filterByPriority} />
+              <SelectValue placeholder={en.tasks.filterByPriority}>
+                {selectedPriorityConfig && SelectedPriorityIcon ? (
+                  <span className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground truncate">
+                    <SelectedPriorityIcon
+                      className={cn("size-3.5 shrink-0", selectedPriorityConfig.color)}
+                    />
+                    <span className="truncate">{selectedPriorityConfig.label}</span>
+                  </span>
+                ) : (
+                  <span className="text-xs font-medium text-foreground">
+                    {en.tasks.allPriorities}
+                  </span>
+                )}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent className="rounded-xl">
               <SelectItem value="ALL">
@@ -212,7 +261,11 @@ export function TaskFilterBar({
               <span className="text-muted-foreground font-medium shrink-0">
                 {en.tasks.tableHeaders.assignee}:
               </span>
-              <SelectValue placeholder={en.tasks.filterByAssignee} />
+              <SelectValue placeholder={en.tasks.filterByAssignee}>
+                <span className="text-xs font-medium text-foreground truncate">
+                  {selectedMemberName}
+                </span>
+              </SelectValue>
             </SelectTrigger>
             <SelectContent className="rounded-xl">
               <SelectItem value="ALL">

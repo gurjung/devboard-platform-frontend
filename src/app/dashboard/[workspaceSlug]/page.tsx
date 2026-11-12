@@ -232,37 +232,37 @@ export default function WorkspaceDashboardPage() {
                       <tr>
                         <th
                           scope="col"
-                          className="py-2 px-3.5 w-32 border-y border-border/50 font-medium"
+                          className="py-2 px-3 border-y border-border/50 font-medium whitespace-nowrap"
                         >
                           {en.tasks.tableHeaders.status}
                         </th>
                         <th
                           scope="col"
-                          className="py-2 px-3.5 min-w-[200px] border-y border-border/50 font-medium"
+                          className="py-2 px-3 min-w-[160px] border-y border-border/50 font-medium"
                         >
                           {en.tasks.tableHeaders.task}
                         </th>
                         <th
                           scope="col"
-                          className="py-2 px-3.5 w-36 border-y border-border/50 font-medium"
+                          className="py-2 px-3 border-y border-border/50 font-medium whitespace-nowrap"
                         >
                           Project
                         </th>
                         <th
                           scope="col"
-                          className="py-2 px-3.5 w-28 border-y border-border/50 font-medium"
+                          className="py-2 px-3 border-y border-border/50 font-medium whitespace-nowrap"
                         >
                           {en.tasks.tableHeaders.priority}
                         </th>
                         <th
                           scope="col"
-                          className="py-2 px-3.5 w-32 border-y border-border/50 font-medium"
+                          className="py-2 px-3 border-y border-border/50 font-medium whitespace-nowrap"
                         >
                           {en.tasks.tableHeaders.dueDate}
                         </th>
                         <th
                           scope="col"
-                          className="py-2 px-3.5 w-36 border-y border-border/50 font-medium"
+                          className="py-2 px-3 border-y border-border/50 font-medium whitespace-nowrap"
                         >
                           {en.tasks.tableHeaders.assignee}
                         </th>
@@ -287,7 +287,7 @@ export default function WorkspaceDashboardPage() {
                             className="group hover:bg-muted/30 transition-colors cursor-pointer"
                           >
                             {/* Status */}
-                            <td className="py-2.5 px-3.5 border-b border-border/40">
+                            <td className="py-2.5 px-3 border-b border-border/40 whitespace-nowrap">
                               <TaskStatusBadge
                                 status={task.status}
                                 size="sm"
@@ -295,7 +295,7 @@ export default function WorkspaceDashboardPage() {
                             </td>
 
                             {/* Task Title */}
-                            <td className="py-2.5 px-3.5 max-w-xs border-b border-border/40">
+                            <td className="py-2.5 px-3 max-w-[220px] border-b border-border/40">
                               <div className="flex items-center gap-2 min-w-0">
                                 <span className="font-mono text-[10px] font-medium text-muted-foreground tabular-nums shrink-0">
                                   {getShortTaskKey(task.id)}
@@ -319,12 +319,12 @@ export default function WorkspaceDashboardPage() {
                             </td>
 
                             {/* Project */}
-                            <td className="py-2.5 px-3.5 border-b border-border/40">
+                            <td className="py-2.5 px-3 border-b border-border/40 whitespace-nowrap">
                               {task.project ? (
                                 <Link
                                   href={`/dashboard/${workspaceSlug}/projects/${task.project.slug}`}
                                   onClick={(e) => e.stopPropagation()}
-                                  className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-brand-text transition-colors truncate max-w-[140px]"
+                                  className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-brand-text transition-colors truncate max-w-[120px]"
                                   title={task.project.name}
                                 >
                                   <FolderKanban className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
@@ -336,7 +336,7 @@ export default function WorkspaceDashboardPage() {
                             </td>
 
                             {/* Priority */}
-                            <td className="py-2.5 px-3.5 border-b border-border/40">
+                            <td className="py-2.5 px-3 border-b border-border/40 whitespace-nowrap">
                               <TaskPriorityBadge
                                 priority={task.priority}
                                 size="sm"
@@ -344,11 +344,11 @@ export default function WorkspaceDashboardPage() {
                             </td>
 
                             {/* Due Date */}
-                            <td className="py-2.5 px-3.5 border-b border-border/40 tabular-nums">
+                            <td className="py-2.5 px-3 border-b border-border/40 tabular-nums whitespace-nowrap">
                               {formattedDate ? (
                                 <div
                                   className={cn(
-                                    "inline-flex items-center gap-1.5 text-xs font-medium",
+                                    "inline-flex items-center gap-1.5 text-xs font-medium whitespace-nowrap",
                                     isOverdue
                                       ? "text-rose-700 dark:text-rose-300 font-semibold"
                                       : "text-muted-foreground"
@@ -365,7 +365,7 @@ export default function WorkspaceDashboardPage() {
                             </td>
 
                             {/* Assignee */}
-                            <td className="py-2.5 px-3.5 border-b border-border/40">
+                            <td className="py-2.5 px-3 border-b border-border/40 whitespace-nowrap">
                               <TaskAssigneeAvatar
                                 assignee={task.assignee}
                                 size="sm"

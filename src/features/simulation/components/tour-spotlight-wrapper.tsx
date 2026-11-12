@@ -40,9 +40,9 @@ export function TourSpotlightWrapper({
     <div
       ref={ref}
       className={cn(
-        "relative transition-all duration-300",
+        "relative transition-all duration-200",
         isHighlighted &&
-          "ring-4 ring-primary ring-offset-4 ring-offset-background border-primary rounded-2xl shadow-2xl scale-[1.01] z-30 bg-primary/5",
+          "ring-2 ring-primary ring-offset-2 ring-offset-background rounded-xl shadow-lg z-30 bg-primary/5",
         className
       )}
     >
@@ -50,14 +50,11 @@ export function TourSpotlightWrapper({
         <div
           role="status"
           className={cn(
-            "absolute z-40 whitespace-nowrap rounded-full bg-primary px-3.5 py-1 text-xs font-bold text-primary-foreground shadow-xl animate-bounce flex items-center gap-2 pointer-events-none",
-            badgePosition === "top" ? "-top-4 left-4" : "-bottom-4 left-4"
+            "absolute z-40 whitespace-nowrap rounded-md bg-primary px-2.5 py-1 text-[11px] font-medium text-primary-foreground shadow-md flex items-center gap-1.5 pointer-events-none",
+            badgePosition === "top" ? "-top-3.5 left-3" : "-bottom-3.5 left-3"
           )}
         >
-          <span className="relative flex size-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
-            <span className="relative inline-flex rounded-full size-2 bg-white" />
-          </span>
+          <span className="inline-flex rounded-full size-1.5 bg-primary-foreground" aria-hidden="true" />
           <span>{spotlightMessage}</span>
         </div>
       )}

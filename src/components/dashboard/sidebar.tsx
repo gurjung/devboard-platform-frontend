@@ -34,6 +34,7 @@ export function Sidebar({
   const params = useParams();
   const workspaceSlug = params?.workspaceSlug as string | undefined;
   const { data: workspaces } = useWorkspaces();
+  const asideRef = React.useRef<HTMLElement | null>(null);
   const closeButtonRef = React.useRef<HTMLButtonElement | null>(null);
 
   const currentWorkspace = workspaces?.find(
@@ -43,18 +44,33 @@ export function Sidebar({
   const isMobileDrawer = !isDesktop && mobileOpen;
   const isSidebarVisible = isDesktop ? open : mobileOpen;
 
+  const releaseSidebarFocus = React.useCallback(() => {
+    const active = document.activeElement;
+    if (active instanceof HTMLElement && asideRef.current?.contains(active)) {
+      active.blur();
+    }
+  }, []);
+
   const handleCloseDrawer = React.useCallback(() => {
+    releaseSidebarFocus();
     onClose();
     requestAnimationFrame(() => {
       onReturnFocus?.();
     });
-  }, [onClose, onReturnFocus]);
+  }, [onClose, onReturnFocus, releaseSidebarFocus]);
 
   const handleMobileNavigate = () => {
     if (!isDesktop) {
+      releaseSidebarFocus();
       onClose();
     }
   };
+
+  React.useLayoutEffect(() => {
+    if (!isSidebarVisible) {
+      releaseSidebarFocus();
+    }
+  }, [isSidebarVisible, releaseSidebarFocus]);
 
   React.useEffect(() => {
     if (!isMobileDrawer) return;
@@ -91,12 +107,12 @@ export function Sidebar({
 
       {/* Sidebar Panel */}
       <aside
+        ref={asideRef}
         id="workspace-sidebar"
         aria-label="Workspace sidebar"
         role={isMobileDrawer ? "dialog" : undefined}
         aria-modal={isMobileDrawer ? true : undefined}
-        aria-hidden={!isSidebarVisible || undefined}
-        inert={!isSidebarVisible ? true : undefined}
+        inert={!isSidebarVisible || undefined}
         className={cn(
           "fixed inset-y-0 left-0 z-50 flex flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border lg:border-r-0 transition-all duration-200 ease-in-out lg:static lg:z-auto",
           mobileOpen ? "w-60 p-3 translate-x-0" : "-translate-x-full w-60 p-3 invisible lg:visible",

@@ -189,7 +189,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const response = await apiClient.post<AuthResponse>(
       "/auth/login",
       credentials,
-      { skipAuth: true }
+      { skipAuth: true },
     );
     const token = extractTokenFromResponse(response);
     let userData = extractUserFromResponse(response);
@@ -223,7 +223,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const response = await apiClient.post<AuthResponse>(
       "/auth/register",
       data,
-      { skipAuth: true }
+      { skipAuth: true },
     );
     const token = extractTokenFromResponse(response);
     let userData = extractUserFromResponse(response);

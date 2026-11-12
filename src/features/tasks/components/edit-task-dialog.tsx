@@ -84,6 +84,16 @@ export function EditTaskDialog({
   const updateTaskMutation = useUpdateTask(workspaceId, projectId);
   const deleteTaskMutation = useDeleteTask(workspaceId, projectId);
 
+  const memberNameById = React.useMemo(() => {
+    const map = new Map<string, string>();
+    for (const m of members) {
+      const id = m.user?.id || m.userId || m.id;
+      const label = m.user?.name || m.user?.email || "Member";
+      if (id) map.set(id, label);
+    }
+    return map;
+  }, [members]);
+
   const isCreator = task?.createdById === currentUserId;
   const isAssignee = task?.assigneeId === currentUserId;
   const isPrivileged = userRole === "OWNER" || userRole === "ADMIN";
@@ -249,35 +259,48 @@ export function EditTaskDialog({
                 <Controller
                   control={control}
                   name="status"
-                  render={({ field }) => (
-                    <Select
-                      value={field.value}
-                      onValueChange={(val) => val && field.onChange(val)}
-                      disabled={!canEdit || updateTaskMutation.isPending}
-                    >
-                      <SelectTrigger
-                        id={statusTriggerId}
-                        aria-labelledby={statusLabelId}
-                        className="w-full h-8 rounded-md text-xs bg-card border-input"
+                  render={({ field }) => {
+                    const selectedStatus =
+                      TASK_STATUS_CONFIG[(field.value as TaskStatus) || "BACKLOG"] ||
+                      TASK_STATUS_CONFIG.BACKLOG;
+                    const SelectedStatusIcon = selectedStatus.icon;
+                    return (
+                      <Select
+                        value={field.value}
+                        onValueChange={(val) => val && field.onChange(val)}
+                        disabled={!canEdit || updateTaskMutation.isPending}
                       >
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-xl">
-                        {TASK_STATUSES.map((st) => {
-                          const cfg = TASK_STATUS_CONFIG[st];
-                          const Icon = cfg.icon;
-                          return (
-                            <SelectItem key={st} value={st}>
-                              <div className="flex items-center gap-2 text-xs">
-                                <Icon className={`size-3.5 ${cfg.color}`} />
-                                <span>{cfg.label}</span>
-                              </div>
-                            </SelectItem>
-                          );
-                        })}
-                      </SelectContent>
-                    </Select>
-                  )}
+                        <SelectTrigger
+                          id={statusTriggerId}
+                          aria-labelledby={statusLabelId}
+                          className="w-full h-8 rounded-md text-xs bg-card border-input"
+                        >
+                          <SelectValue>
+                            <span className="inline-flex items-center gap-2 text-xs font-medium text-foreground truncate">
+                              <SelectedStatusIcon
+                                className={`size-3.5 shrink-0 ${selectedStatus.color}`}
+                              />
+                              <span className="truncate">{selectedStatus.label}</span>
+                            </span>
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl">
+                          {TASK_STATUSES.map((st) => {
+                            const cfg = TASK_STATUS_CONFIG[st];
+                            const Icon = cfg.icon;
+                            return (
+                              <SelectItem key={st} value={st}>
+                                <div className="flex items-center gap-2 text-xs">
+                                  <Icon className={`size-3.5 ${cfg.color}`} />
+                                  <span>{cfg.label}</span>
+                                </div>
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectContent>
+                      </Select>
+                    );
+                  }}
                 />
               </div>
 
@@ -293,35 +316,48 @@ export function EditTaskDialog({
                 <Controller
                   control={control}
                   name="priority"
-                  render={({ field }) => (
-                    <Select
-                      value={field.value}
-                      onValueChange={(val) => val && field.onChange(val)}
-                      disabled={!canEdit || updateTaskMutation.isPending}
-                    >
-                      <SelectTrigger
-                        id={priorityTriggerId}
-                        aria-labelledby={priorityLabelId}
-                        className="w-full h-8 rounded-md text-xs bg-card border-input"
+                  render={({ field }) => {
+                    const selectedPriority =
+                      TASK_PRIORITY_CONFIG[(field.value as TaskPriority) || "MEDIUM"] ||
+                      TASK_PRIORITY_CONFIG.MEDIUM;
+                    const SelectedPriorityIcon = selectedPriority.icon;
+                    return (
+                      <Select
+                        value={field.value}
+                        onValueChange={(val) => val && field.onChange(val)}
+                        disabled={!canEdit || updateTaskMutation.isPending}
                       >
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-xl">
-                        {TASK_PRIORITIES.map((pr) => {
-                          const cfg = TASK_PRIORITY_CONFIG[pr];
-                          const Icon = cfg.icon;
-                          return (
-                            <SelectItem key={pr} value={pr}>
-                              <div className="flex items-center gap-2 text-xs">
-                                <Icon className={`size-3.5 ${cfg.color}`} />
-                                <span>{cfg.label}</span>
-                              </div>
-                            </SelectItem>
-                          );
-                        })}
-                      </SelectContent>
-                    </Select>
-                  )}
+                        <SelectTrigger
+                          id={priorityTriggerId}
+                          aria-labelledby={priorityLabelId}
+                          className="w-full h-8 rounded-md text-xs bg-card border-input"
+                        >
+                          <SelectValue>
+                            <span className="inline-flex items-center gap-2 text-xs font-medium text-foreground truncate">
+                              <SelectedPriorityIcon
+                                className={`size-3.5 shrink-0 ${selectedPriority.color}`}
+                              />
+                              <span className="truncate">{selectedPriority.label}</span>
+                            </span>
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl">
+                          {TASK_PRIORITIES.map((pr) => {
+                            const cfg = TASK_PRIORITY_CONFIG[pr];
+                            const Icon = cfg.icon;
+                            return (
+                              <SelectItem key={pr} value={pr}>
+                                <div className="flex items-center gap-2 text-xs">
+                                  <Icon className={`size-3.5 ${cfg.color}`} />
+                                  <span>{cfg.label}</span>
+                                </div>
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectContent>
+                      </Select>
+                    );
+                  }}
                 />
               </div>
 
@@ -355,52 +391,72 @@ export function EditTaskDialog({
                 <Controller
                   control={control}
                   name="assigneeId"
-                  render={({ field }) => (
-                    <Select
-                      value={field.value || "unassigned"}
-                      onValueChange={(val) =>
-                        field.onChange(val === "unassigned" ? "" : val)
-                      }
-                      disabled={
-                        !canEdit ||
-                        updateTaskMutation.isPending ||
-                        isMembersLoading
-                      }
-                    >
-                      <SelectTrigger
-                        id={assigneeTriggerId}
-                        aria-labelledby={assigneeLabelId}
-                        className="w-full h-8 rounded-md text-xs bg-card border-input"
+                  render={({ field }) => {
+                    const selectedAssigneeName = field.value
+                      ? memberNameById.get(field.value) ||
+                        (task.assigneeId === field.value
+                          ? task.assignee?.name || task.assignee?.email
+                          : undefined)
+                      : null;
+                    return (
+                      <Select
+                        value={field.value || "unassigned"}
+                        onValueChange={(val) =>
+                          field.onChange(val === "unassigned" ? "" : val)
+                        }
+                        disabled={
+                          !canEdit ||
+                          updateTaskMutation.isPending ||
+                          isMembersLoading
+                        }
                       >
-                        <SelectValue
-                          placeholder={en.tasks.form.assigneePlaceholder}
-                        />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-xl">
-                        <SelectItem value="unassigned">
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <UserIcon className="size-3.5 text-muted-foreground" />
-                            <span>{en.tasks.unassigned}</span>
-                          </div>
-                        </SelectItem>
-                        {members.map((member) => (
-                          <SelectItem
-                            key={member.user?.id || member.id}
-                            value={member.user?.id || member.userId || member.id}
+                        <SelectTrigger
+                          id={assigneeTriggerId}
+                          aria-labelledby={assigneeLabelId}
+                          className="w-full h-8 rounded-md text-xs bg-card border-input"
+                        >
+                          <SelectValue
+                            placeholder={en.tasks.form.assigneePlaceholder}
                           >
-                            <div className="flex items-center gap-2 text-xs">
-                              <span className="font-medium truncate">
-                                {member.user?.name || member.user?.email}
+                            {selectedAssigneeName ? (
+                              <span className="inline-flex items-center gap-2 text-xs font-medium text-foreground truncate">
+                                <UserIcon className="size-3.5 shrink-0 text-muted-foreground" />
+                                <span className="truncate">{selectedAssigneeName}</span>
                               </span>
-                              <span className="text-[10px] text-muted-foreground truncate">
-                                ({member.role})
+                            ) : (
+                              <span className="inline-flex items-center gap-2 text-xs text-muted-foreground truncate">
+                                <UserIcon className="size-3.5 shrink-0 text-muted-foreground" />
+                                <span className="truncate">{en.tasks.unassigned}</span>
                               </span>
+                            )}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl">
+                          <SelectItem value="unassigned">
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <UserIcon className="size-3.5 text-muted-foreground" />
+                              <span>{en.tasks.unassigned}</span>
                             </div>
                           </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
+                          {members.map((member) => (
+                            <SelectItem
+                              key={member.user?.id || member.id}
+                              value={member.user?.id || member.userId || member.id}
+                            >
+                              <div className="flex items-center gap-2 text-xs">
+                                <span className="font-medium truncate">
+                                  {member.user?.name || member.user?.email}
+                                </span>
+                                <span className="text-[10px] text-muted-foreground truncate">
+                                  ({member.role})
+                                </span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    );
+                  }}
                 />
               </div>
             </div>

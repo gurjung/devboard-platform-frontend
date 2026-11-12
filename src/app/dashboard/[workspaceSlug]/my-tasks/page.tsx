@@ -298,7 +298,24 @@ function MyTasksContent({
                   <span className="text-muted-foreground font-medium shrink-0">
                     Status:
                   </span>
-                  <SelectValue placeholder="Filter status" />
+                  <SelectValue placeholder="Filter status">
+                    {filters.status !== "ALL" && TASK_STATUS_CONFIG[filters.status] ? (
+                      (() => {
+                        const cfg = TASK_STATUS_CONFIG[filters.status];
+                        const Icon = cfg.icon;
+                        return (
+                          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground truncate">
+                            <Icon className={cn("size-3.5 shrink-0", cfg.color)} />
+                            <span className="truncate">{cfg.label}</span>
+                          </span>
+                        );
+                      })()
+                    ) : (
+                      <span className="text-xs font-medium text-foreground">
+                        All Statuses
+                      </span>
+                    )}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
                   <SelectItem value="ALL">
@@ -338,7 +355,24 @@ function MyTasksContent({
                   <span className="text-muted-foreground font-medium shrink-0">
                     Priority:
                   </span>
-                  <SelectValue placeholder="Filter priority" />
+                  <SelectValue placeholder="Filter priority">
+                    {filters.priority !== "ALL" && TASK_PRIORITY_CONFIG[filters.priority] ? (
+                      (() => {
+                        const cfg = TASK_PRIORITY_CONFIG[filters.priority];
+                        const Icon = cfg.icon;
+                        return (
+                          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground truncate">
+                            <Icon className={cn("size-3.5 shrink-0", cfg.color)} />
+                            <span className="truncate">{cfg.label}</span>
+                          </span>
+                        );
+                      })()
+                    ) : (
+                      <span className="text-xs font-medium text-foreground">
+                        All Priorities
+                      </span>
+                    )}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
                   <SelectItem value="ALL">
